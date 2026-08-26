@@ -1,0 +1,7 @@
+#!/bin/sh
+# Gradle wrapper startup script. The wrapper JAR is checked into wrapper/.
+APP_HOME=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)
+if command -v asdf >/dev/null 2>&1; then
+  exec asdf exec java -classpath "$APP_HOME/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"
+fi
+exec java -classpath "$APP_HOME/wrapper/gradle-wrapper.jar" org.gradle.wrapper.GradleWrapperMain "$@"

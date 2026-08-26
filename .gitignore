@@ -1,0 +1,8 @@
+.env
+node_modules/
+dist/
+build/
+.gradle/
+*.log
+.DS_Store
+.claude/settings.local.json
