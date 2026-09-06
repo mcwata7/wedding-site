@@ -22,7 +22,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wedding
       SPRING_DATASOURCE_USERNAME: wedding
       WEDDING_MEDIA_DIR: /data/media
-    ports: ["8080:8080"]
+      # JVM remote debug (JDWP). suspend=n so the app starts normally; attach anytime on 5005.
+      # address=*:5005 accepts connections from any interface -- fine for local/dev compose, never
+      # expose 5005 on a host reachable from the internet (JDWP has no authentication).
+      JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
+    ports: ["8080:8080", "5005:5005"]
     volumes: [media-data:/data/media]
   web-internal:
     build: ./frontend/internal

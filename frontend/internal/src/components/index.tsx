@@ -1,9 +1,10 @@
 import {
-  createContext, useContext, useCallback, useState,
+  createContext, useContext, useCallback, useState, useRef,
   type ReactNode, type ButtonHTMLAttributes, type InputHTMLAttributes, type TextareaHTMLAttributes,
 } from 'react'
-import { X } from 'lucide-react'
-import { useMediaAssets } from '../api/hooks'
+import { X, Upload } from 'lucide-react'
+import { useMediaAssets, useUploadMedia } from '../api/hooks'
+import { mediaUrl } from '../api/client'
 import type { MediaAsset } from '../api/types'
 
 // --- Button ---
@@ -38,11 +39,11 @@ interface ModalProps {
   onClose: () => void
   title: string
   children: ReactNode
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   if (!open) return null
-  const widths = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' }
+  const widths = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' }
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
@@ -261,13 +262,33 @@ interface MediaPickerProps {
   filter?: (m: MediaAsset) => boolean
 }
 export function MediaPicker({ value, onChange, filter }: MediaPickerProps) {
+  const toast = useToast()
   const { data: media } = useMediaAssets()
+  const uploadMedia = useUploadMedia()
+  const fileInput = useRef<HTMLInputElement>(null)
   const filtered = (media ?? []).filter(m => !filter || filter(m))
   const options = [{ value: '', label: 'None' }, ...filtered.map(m => ({ value: m.id, label: m.original_name || m.id }))]
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      const uploaded = await uploadMedia.mutateAsync(file)
+      onChange(uploaded.id)
+    } catch {
+      toast.error('Upload failed.')
+    }
+  }
+
   return (
     <div className="flex items-center gap-3">
       <Select value={value} onChange={onChange} options={options} />
-      {value && <img src={`/api/v1/media/${value}`} alt="" className="h-10 w-10 rounded object-cover border border-gray-200" />}
+      {value && <img src={mediaUrl(value)} alt="" className="h-10 w-10 rounded object-cover border border-gray-200" />}
+      <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+      <Button type="button" variant="secondary" size="sm" onClick={() => fileInput.current?.click()} disabled={uploadMedia.isPending}>
+        <Upload size={14} /> {uploadMedia.isPending ? 'Uploading…' : 'Upload'}
+      </Button>
     </div>
   )
 }

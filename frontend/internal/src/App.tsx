@@ -1,15 +1,14 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Calendar, CheckSquare, Hotel, DollarSign, FileDown, Globe, Mail, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, Hotel, FileDown, Globe, Mail, LogOut } from 'lucide-react'
 import { useAuth } from './auth/AuthContext'
 import { LoginPage } from './auth/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { PartiesPage } from './pages/parties/PartiesPage'
 import { PartyDetailPage } from './pages/parties/PartyDetailPage'
 import { EventsPage } from './pages/events/EventsPage'
-import { RsvpsPage } from './pages/rsvps/RsvpsPage'
+import { VenueDetailPage } from './pages/venues/VenueDetailPage'
 import { AccommodationsPage } from './pages/accommodations/AccommodationsPage'
-import { BudgetPage } from './pages/budget/BudgetPage'
 import { InvitationsPage } from './pages/invitations/InvitationsPage'
 import { ReportsPage } from './pages/reports/ReportsPage'
 import { SitePage } from './pages/site/SitePage'
@@ -23,9 +22,7 @@ const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
   { to: '/parties', icon: Users, label: 'Parties & Guests' },
   { to: '/events', icon: Calendar, label: 'Events & Venues' },
-  { to: '/rsvps', icon: CheckSquare, label: 'RSVPs' },
   { to: '/accommodations', icon: Hotel, label: 'Accommodations' },
-  { to: '/budget', icon: DollarSign, label: 'Budget' },
   { to: '/invitations', icon: Mail, label: 'Invitations' },
   { to: '/site', icon: Globe, label: 'Wedding Site' },
   { to: '/reports', icon: FileDown, label: 'Reports' },
@@ -91,9 +88,8 @@ export default function App() {
               <Route path="parties" element={<PartiesPage />} />
               <Route path="parties/:id" element={<PartyDetailPage />} />
               <Route path="events" element={<EventsPage />} />
-              <Route path="rsvps" element={<RsvpsPage />} />
+              <Route path="venues/:id" element={<VenueDetailPage />} />
               <Route path="accommodations" element={<AccommodationsPage />} />
-              <Route path="budget" element={<BudgetPage />} />
               <Route path="invitations" element={<InvitationsPage />} />
               <Route path="site" element={<SitePage />} />
               <Route path="reports" element={<ReportsPage />} />

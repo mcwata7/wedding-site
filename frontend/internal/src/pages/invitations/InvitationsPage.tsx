@@ -1,14 +1,11 @@
-import { useState, useEffect } from 'react'
-import { FileDown, Upload, Printer } from 'lucide-react'
-import {
-  useInvitationCards, useIssueMissingInvitations, useSiteSettings, useUpdateSiteSettings, useUploadMedia,
-} from '../../api/hooks'
-import {
-  Button, Modal, Field, Input, TextArea, Table, LoadingSpinner, PageHeader, Section, useToast, Badge, MediaPicker,
-} from '../../components'
+import { useState } from 'react'
+import { FileDown, Printer } from 'lucide-react'
+import { useInvitationCards, useIssueMissingInvitations } from '../../api/hooks'
+import { Button, Modal, Table, LoadingSpinner, PageHeader, Badge, useToast } from '../../components'
 import { api, ApiRequestError } from '../../api/client'
 import { statusColor, fmtDateTime } from '../../lib/format'
 import type { InvitationCardRow } from '../../api/types'
+import { CardDesignSection } from './CardDesignSection'
 
 const BASE = '/api/v1/internal'
 
@@ -22,49 +19,10 @@ function slug(name: string) {
 export function InvitationsPage() {
   const toast = useToast()
   const { data: cardRows, isLoading } = useInvitationCards()
-  const { data: settings, isLoading: settingsLoading } = useSiteSettings()
-  const updateSettings = useUpdateSiteSettings()
-  const uploadMedia = useUploadMedia()
   const issueMissing = useIssueMissingInvitations()
-
-  const [form, setForm] = useState({ invitation_image_id: '', invitation_headline: '', invitation_body: '', invitation_footer: '' })
-  useEffect(() => {
-    if (settings) {
-      setForm({
-        invitation_image_id: settings.invitation_image_id ?? '',
-        invitation_headline: settings.invitation_headline ?? '',
-        invitation_body: settings.invitation_body ?? '',
-        invitation_footer: settings.invitation_footer ?? '',
-      })
-    }
-  }, [settings])
-  const field = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm(f => ({ ...f, [k]: e.target.value }))
 
   const [pendingDownload, setPendingDownload] = useState<PendingDownload | null>(null)
   const [missingCount, setMissingCount] = useState(0)
-
-  const saveDesign = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      await updateSettings.mutateAsync({ ...form, invitation_image_id: form.invitation_image_id || null })
-      toast.success('Card design saved.')
-    } catch (err) {
-      toast.error(err instanceof ApiRequestError ? err.message : 'Failed to save card design.')
-    }
-  }
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
-    try {
-      const asset = await uploadMedia.mutateAsync(file)
-      setForm(f => ({ ...f, invitation_image_id: asset.id }))
-      toast.success('Artwork uploaded. Click Save to use it on the card.')
-    } catch (err) {
-      toast.error(err instanceof ApiRequestError ? err.message : 'Upload failed.')
-    }
-  }
 
   const missingCountFromMessage = (message: string) => {
     const n = parseInt(message, 10)
@@ -151,34 +109,7 @@ export function InvitationsPage() {
       </PageHeader>
 
       <div className="mb-6">
-        {settingsLoading ? <LoadingSpinner /> : (
-          <Section title="Card Design">
-            <form onSubmit={saveDesign} className="space-y-4">
-              <Field label="Artwork">
-                <div className="flex items-center gap-3">
-                  <MediaPicker
-                    value={form.invitation_image_id}
-                    onChange={id => setForm(f => ({ ...f, invitation_image_id: id }))}
-                    filter={m => m.content_type === 'image/jpeg' || m.content_type === 'image/png'}
-                  />
-                  <label>
-                    <Button size="sm" variant="secondary" type="button" onClick={() => document.getElementById('invitation-artwork-input')?.click()} disabled={uploadMedia.isPending}>
-                      <Upload size={14} /> Upload
-                    </Button>
-                    <input id="invitation-artwork-input" type="file" accept="image/jpeg,image/png" className="hidden" onChange={handleUpload} />
-                  </label>
-                </div>
-                <p className="mt-1 text-xs text-gray-500">JPEG or PNG only -- WEBP can't be embedded in the printed PDF.</p>
-              </Field>
-              <Field label="Headline"><Input value={form.invitation_headline} onChange={field('invitation_headline')} placeholder="Together with joy" /></Field>
-              <Field label="Body"><TextArea rows={2} value={form.invitation_body} onChange={field('invitation_body')} placeholder="request the pleasure of your company" /></Field>
-              <Field label="Footer caption"><Input value={form.invitation_footer} onChange={field('invitation_footer')} placeholder="Scan to RSVP" /></Field>
-              <div className="flex justify-end pt-2">
-                <Button type="submit" disabled={updateSettings.isPending}>Save Card Design</Button>
-              </div>
-            </form>
-          </Section>
-        )}
+        <CardDesignSection />
       </div>
 
       {isLoading ? <LoadingSpinner /> : (

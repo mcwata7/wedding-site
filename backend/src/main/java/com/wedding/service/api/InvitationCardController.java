@@ -5,21 +5,21 @@ import com.wedding.service.security.Principal;
 import com.wedding.service.service.DataService;
 import com.wedding.service.service.InvitationCardRenderer;
 import com.wedding.service.service.InvitationCardRenderer.Card;
+import com.wedding.service.service.InvitationCardRenderer.CardLayout;
 import com.wedding.service.service.InvitationCardRenderer.CardTheme;
+import com.wedding.service.service.InvitationCardRenderer.Orientation;
 import com.wedding.service.service.MediaService;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * Renders printable A6 QR invitation cards. Kept separate from InternalController (which mints
- * the underlying tokens) because it owns a distinct concern -- PDF generation -- with its own
- * failure modes (missing artwork, unprintable text, unissued tokens).
+ * Renders printable, two-sided A6 QR invitation cards (front = pure artwork, back = QR + invite
+ * URL + guest names). Kept separate from InternalController (which mints the underlying tokens)
+ * because it owns a distinct concern -- PDF generation -- with its own failure modes (missing
+ * artwork, unprintable text, unissued tokens).
  *
  * GET endpoints never mutate: if any non-archived party lacks a printable token, they fail with
  * 409 MISSING_INVITATION(S) instead of silently minting one, so a retry/prefetch/double-click
@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController @RequestMapping("/api/v1/internal")
 public class InvitationCardController {
   private final DataService db; private final MediaService media; private final InvitationCardRenderer renderer; private final AppProperties props;
-  private final SecureRandom random = new SecureRandom();
 
   InvitationCardController(DataService db, MediaService media, InvitationCardRenderer renderer, AppProperties props) {
     this.db = db; this.media = media; this.renderer = renderer; this.props = props;
@@ -41,7 +40,7 @@ public class InvitationCardController {
     var parties = db.many("SELECT p.id FROM party p LEFT JOIN invitation i ON i.party_id=p.id WHERE NOT p.archived AND i.token IS NULL", Map.of());
     for (var row : parties) {
       UUID partyId = db.id(row.get("id"));
-      String token = UUID.randomUUID() + "-" + Long.toUnsignedString(random.nextLong(), 36);
+      String token = db.newToken();
       UUID invite = db.uuid();
       db.named.update(
         "INSERT INTO invitation(id,party_id,token,token_hash) VALUES(:i,:p,:tok,:t) " +
@@ -74,29 +73,51 @@ public class InvitationCardController {
     return pdfResponse(renderer.render(theme(), cards, bleedMm), "invitation-cards.pdf");
   }
 
-  private CardTheme theme() {
+  /** Lets the planner preview unsaved Card Design edits before hitting Save. baseUrl always comes
+   * from the DB (not part of card design editing); everything else in `body` overlays the DB-loaded
+   * values. `side` picks a single-page render (FRONT or BACK) -- the frontend requests each side
+   * separately so it can show two distinct single-page PDFs instead of paging one two-page PDF
+   * (which browsers' embedded PDF viewers don't reliably do when the same document is embedded
+   * twice). Inline (not attachment) so the frontend can display it. */
+  @PostMapping("/invitation-cards/preview.pdf")
+  ResponseEntity<byte[]> preview(@RequestBody Map<String, Object> body, @RequestParam(defaultValue = "BOTH") String side) {
     var s = db.one("SELECT * FROM site_settings WHERE singleton", Map.of());
-    byte[] artwork = null; String artworkType = null;
-    if (s.get("invitation_image_id") != null) {
-      var asset = db.one("SELECT storage_key,content_type FROM media_asset WHERE id=:id", Map.of("id", db.id(s.get("invitation_image_id"))));
-      artwork = media.read(asset.get("storage_key").toString());
-      artworkType = asset.get("content_type").toString();
-    }
-    String date = s.get("wedding_date") == null ? "" : LocalDate.parse(s.get("wedding_date").toString()).format(DateTimeFormatter.ofPattern("d MMMM yyyy"));
-    return new CardTheme(
-      coupleNames(s.get("partner_one_name"), s.get("partner_two_name")), date,
-      str(s.get("invitation_headline")), str(s.get("invitation_body")),
-      s.get("invitation_footer") == null || str(s.get("invitation_footer")).isBlank() ? "Scan to RSVP" : s.get("invitation_footer").toString(),
-      artwork, artworkType, props.site().publicUrl());
+    Art front = loadArt(body.containsKey("invitation_front_image_id") ? body.get("invitation_front_image_id") : s.get("invitation_front_image_id"));
+    Art back = loadArt(body.containsKey("invitation_back_image_id") ? body.get("invitation_back_image_id") : s.get("invitation_back_image_id"));
+    Orientation orientation = parseOrientation(body.containsKey("invitation_orientation") ? body.get("invitation_orientation") : s.get("invitation_orientation"));
+    CardLayout layout = InvitationCardRenderer.validate(
+      InvitationCardRenderer.parseLayout(body.getOrDefault("invitation_card_layout", s.get("invitation_card_layout")), db.json).withDefaults(), orientation);
+    CardTheme theme = new CardTheme(front.bytes(), front.contentType(), back.bytes(), back.contentType(), props.site().publicUrl(), orientation, layout);
+    byte[] pdf = renderer.render(theme, List.of(new Card("Sample Family", "preview-token-0000")), 0, InvitationCardRenderer.Side.valueOf(side.toUpperCase()));
+    return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF)
+      .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.inline().build().toString())
+      .body(pdf);
   }
 
-  private static String str(Object v) { return v == null ? "" : v.toString(); }
-  private static String coupleNames(Object one, Object two) {
-    String a = str(one).trim(), b = str(two).trim();
-    if (a.isEmpty()) return b;
-    if (b.isEmpty()) return a;
-    return a + " & " + b;
+  private CardTheme theme() {
+    var s = db.one("SELECT * FROM site_settings WHERE singleton", Map.of());
+    Art front = loadArt(s.get("invitation_front_image_id"));
+    Art back = loadArt(s.get("invitation_back_image_id"));
+    Orientation orientation = parseOrientation(s.get("invitation_orientation"));
+    CardLayout layout = InvitationCardRenderer.validate(
+      InvitationCardRenderer.parseLayout(s.get("invitation_card_layout"), db.json).withDefaults(), orientation);
+    return new CardTheme(front.bytes(), front.contentType(), back.bytes(), back.contentType(), props.site().publicUrl(), orientation, layout);
   }
+
+  private record Art(byte[] bytes, String contentType) {}
+  private Art loadArt(Object mediaId) {
+    if (mediaId == null) return new Art(null, null);
+    var asset = db.one("SELECT storage_key,content_type FROM media_asset WHERE id=:id", Map.of("id", db.id(mediaId)));
+    return new Art(media.read(asset.get("storage_key").toString()), asset.get("content_type").toString());
+  }
+
+  /** Guards a null/blank orientation (a singleton row from before this column existed) to the
+   * schema's own default rather than NPE-ing. */
+  private static Orientation parseOrientation(Object value) {
+    if (value == null || value.toString().isBlank()) return Orientation.PORTRAIT;
+    return Orientation.valueOf(value.toString());
+  }
+
   private static String slug(String v) { return v.toLowerCase().replaceAll("[^a-z0-9]+", "-").replaceAll("(^-|-$)", ""); }
   private ResponseEntity<byte[]> pdfResponse(byte[] pdf, String filename) {
     return ResponseEntity.ok().contentType(MediaType.APPLICATION_PDF)

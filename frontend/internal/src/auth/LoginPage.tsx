@@ -16,8 +16,8 @@ export function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const res = await api.post<{ accessToken: string }>('/api/v1/auth/planner/login', { email, password })
-      login(res.accessToken)
+      const res = await api.post<{ accessToken: string; role: string }>('/api/v1/auth/planner/login', { email, password })
+      login(res.accessToken, res.role)
       navigate('/')
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'Login failed.')

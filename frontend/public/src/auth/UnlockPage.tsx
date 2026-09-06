@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGuestAuth } from './GuestAuthContext'
-import { readPendingQrToken, clearPendingQrToken } from './InvitePage'
 import { api, ApiRequestError } from '../api/client'
 import type { InviteLookup, GuestSession } from '../api/types'
 
-/** Two-step guest gate: enter/confirm the QR token, answer the party's verification question. */
+/** Two-step guest gate: enter your name (which maps to your party), then answer that party's
+ * verification question. The name alone is not a credential -- it's public-ish information -- so
+ * the verification answer is what actually grants the session. */
 export function UnlockPage() {
   const { login } = useGuestAuth()
   const navigate = useNavigate()
-  const [qrToken, setQrToken] = useState(readPendingQrToken())
+  const [name, setName] = useState('')
   const [invite, setInvite] = useState<InviteLookup | null>(null)
   const [answer, setAnswer] = useState('')
   const [error, setError] = useState('')
@@ -20,10 +21,10 @@ export function UnlockPage() {
     setError('')
     setLoading(true)
     try {
-      const res = await api.post<InviteLookup>('/api/v1/guest/invitations/lookup', { qrToken })
+      const res = await api.post<InviteLookup>('/api/v1/guest/invitations/lookup', { name })
       setInvite(res)
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : 'That invitation code was not found.')
+      setError(err instanceof ApiRequestError ? err.message : "We couldn't find that name on the guest list.")
     } finally {
       setLoading(false)
     }
@@ -34,8 +35,7 @@ export function UnlockPage() {
     setError('')
     setLoading(true)
     try {
-      const res = await api.post<GuestSession>('/api/v1/guest/sessions', { qrToken, answer })
-      clearPendingQrToken()
+      const res = await api.post<GuestSession>('/api/v1/guest/sessions', { name, answer })
       login(res.accessToken)
       navigate('/')
     } catch (err) {
@@ -46,22 +46,24 @@ export function UnlockPage() {
   }
 
   return (
-    <div className="min-h-screen bg-paper flex flex-col justify-center py-12 px-4">
+    <div className="min-h-screen temple-backdrop flex flex-col justify-center py-12 px-4">
       <div className="mx-auto w-full max-w-sm text-center">
-        <h1 className="font-display text-3xl text-ink mb-8">You're Invited</h1>
-        <div className="bg-white rounded-lg shadow p-8 text-left">
+        <h1 className="font-display text-3xl text-paper mb-2">You're Invited</h1>
+        <div className="temple-divider text-sm mb-8" />
+        <div className="bg-paper rounded-lg shadow-xl p-8 text-left">
           {error && (
             <div className="mb-4 rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
           )}
           {!invite ? (
             <form onSubmit={lookup} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-ink/80 mb-1">Invitation code</label>
+                <label className="block text-sm font-medium text-ink/80 mb-1">Your name</label>
                 <input
                   required
-                  value={qrToken}
-                  onChange={e => setQrToken(e.target.value)}
-                  placeholder="Paste your invitation code"
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder="First and last name"
+                  autoComplete="name"
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-accent"
                   autoFocus
                 />
@@ -93,6 +95,13 @@ export function UnlockPage() {
                 className="w-full bg-accent text-white rounded-md py-2 text-sm font-medium hover:opacity-90 disabled:opacity-50 transition-opacity"
               >
                 {loading ? 'Verifying…' : 'Unlock'}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setInvite(null); setAnswer(''); setError('') }}
+                className="w-full text-xs text-ink/50 hover:text-ink/80"
+              >
+                Not you? Enter a different name
               </button>
             </form>
           )}

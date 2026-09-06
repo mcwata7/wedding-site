@@ -1,0 +1,70 @@
+databases:
+  - name: wedding-db
+    databaseName: wedding
+    user: wedding
+    plan: 0.1c-256mb # cheapest paid plan -- free Postgres on Render expires after 30 days
+    postgresMajorVersion: "16"
+
+services:
+  # Backend API. Runs on the free plan by default (spins down after 15 min idle, ~1 min cold
+  # start on next request) -- fine for a low-traffic wedding site. Upgrade `plan` for an
+  # always-on instance, which is also required if you later add a persistent disk for
+  # WEDDING_MEDIA_DIR (uploaded planner images are otherwise lost on every redeploy/restart).
+  - name: wedding-api
+    type: web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PGHOST
+        fromDatabase: { name: wedding-db, property: host }
+      - key: PGPORT
+        fromDatabase: { name: wedding-db, property: port }
+      - key: PGDATABASE
+        fromDatabase: { name: wedding-db, property: database }
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase: { name: wedding-db, property: user }
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase: { name: wedding-db, property: password }
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_EMAIL
+        sync: false # set during Blueprint creation
+      - key: ADMIN_PASSWORD
+        sync: false # set during Blueprint creation
+      - key: PUBLIC_SITE_URL
+        value: https://wedding-guest.onrender.com
+      - key: WEDDING_CORS_ALLOWED_ORIGINS
+        value: https://wedding-guest.onrender.com,https://wedding-planner.onrender.com
+      - key: SLACK_WEB_HOOK
+        value: "" # optional -- RSVP Slack alerts silently no-op until set
+
+  # Guest-facing site (frontend/public). Static Sites are free and never spin down.
+  - name: wedding-guest
+    type: web
+    runtime: static
+    rootDir: ./frontend/public
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - path: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://wedding-api.onrender.com
+
+  # Planner UI (frontend/internal). Static Sites are free and never spin down.
+  - name: wedding-planner
+    type: web
+    runtime: static
+    rootDir: ./frontend/internal
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - path: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://wedding-api.onrender.com

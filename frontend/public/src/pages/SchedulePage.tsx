@@ -1,11 +1,12 @@
-import { useSiteConfig, useSchedule } from '../api/hooks'
-import { LoadingSpinner, ErrorMessage, PageHeading } from '../components'
+import { useSiteConfig, usePageContent, useSchedule, siteMediaUrl } from '../api/hooks'
+import { LoadingSpinner, ErrorMessage, PageHeading, PageBanner } from '../components'
 import { ApiRequestError } from '../api/client'
 import { fmtDate, fmtTime } from '../lib/format'
 
 export function SchedulePage() {
   const config = useSiteConfig()
   const schedule = useSchedule()
+  const page = usePageContent('schedule')
 
   if (config.isLoading || schedule.isLoading) return <LoadingSpinner />
   const err = config.error ?? schedule.error
@@ -17,9 +18,10 @@ export function SchedulePage() {
 
   return (
     <div>
-      <PageHeading eyebrow="Join Us" title={settings.schedule_heading || 'Schedule'} />
-      {settings.schedule_body && (
-        <p className="max-w-xl mx-auto text-center text-ink/70 mb-10">{settings.schedule_body}</p>
+      <PageBanner src={siteMediaUrl(page?.image_id)} />
+      <PageHeading eyebrow="Join Us" title={page?.heading || 'Schedule'} />
+      {page?.body && (
+        <p className="max-w-xl mx-auto text-center text-ink/70 mb-10">{page.body}</p>
       )}
 
       {events.length === 0 ? (
@@ -27,7 +29,7 @@ export function SchedulePage() {
       ) : (
         <ol className="max-w-2xl mx-auto space-y-6">
           {events.map(e => (
-            <li key={e.id} className="bg-white rounded-lg border border-ink/10 p-6">
+            <li key={e.id} className="bg-tileBg rounded-lg border border-tileBorder/10 p-6">
               <p className="text-xs tracking-[0.15em] uppercase text-accent mb-1">
                 {fmtDate(e.starts_at, settings.display_timezone)}
               </p>

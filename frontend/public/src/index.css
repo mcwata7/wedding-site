@@ -2,6 +2,75 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Planner-selectable "site font family" faces (see src/lib/theme.ts) -- a fixed, curated set
+   bundled as static assets (public/fonts/), not planner-uploaded, so no backend/media involvement
+   is needed. font-display: swap avoids invisible text while a chosen face loads; a browser only
+   ever fetches the one @font-face a planner actually picked, so bundling all 10 here costs
+   nothing extra on the wire. */
+@font-face { font-family: 'Tangerine'; src: url('/fonts/Tangerine-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Rouge Script'; src: url('/fonts/RougeScript-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Monsieur La Doulaise'; src: url('/fonts/MonsieurLaDoulaise-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Gwendolyn'; src: url('/fonts/Gwendolyn-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Ephesis'; src: url('/fonts/Ephesis-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Lavishly Yours'; src: url('/fonts/LavishlyYours-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Oooh Baby'; src: url('/fonts/OoohBaby-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Carattere'; src: url('/fonts/Carattere-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Birthstone'; src: url('/fonts/Birthstone-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Bilbo Swash Caps'; src: url('/fonts/BilboSwashCaps-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+
 body {
   @apply bg-paper text-ink antialiased;
+}
+
+/* The header's nav row: centered while every item fits, horizontally scrollable once they don't
+   (narrow phones, a large header_font_size, or simply more pages). `safe center` is what lets
+   those two modes coexist -- plain `justify-content: center` centers the *overflowing* line too,
+   pushing the first and last item past the scrollport's reachable range, so on a 375px screen the
+   nav opened already clipped at both ends with "Home" unreachable no matter how far you scrolled.
+   `safe` falls back to start-alignment exactly when overflow occurs, which is the only case that
+   was broken. The scrollbar itself is hidden -- swipe/trackpad/keyboard scrolling all still work,
+   and a bare scrollbar track under a script-font nav read as a rendering artifact rather than an
+   affordance -- so useOverflowFade (src/lib/scroll.ts) fades whichever edge still has items past
+   it instead, which is the actual "there's more this way" cue. */
+.nav-scroll {
+  justify-content: safe center;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.nav-scroll::-webkit-scrollbar {
+  display: none;
+}
+.nav-scroll[data-fade-left='true'][data-fade-right='true'] {
+  mask-image: linear-gradient(to right, transparent, black 1.5rem, black calc(100% - 1.5rem), transparent);
+}
+.nav-scroll[data-fade-left='true'][data-fade-right='false'] {
+  mask-image: linear-gradient(to right, transparent, black 1.5rem);
+}
+.nav-scroll[data-fade-left='false'][data-fade-right='true'] {
+  mask-image: linear-gradient(to right, black calc(100% - 1.5rem), transparent);
+}
+
+/* Full-bleed backdrop of the temple illustration behind the maroon guest gate,
+   tinted so it reads as texture rather than a photo. */
+.temple-backdrop {
+  background-image: linear-gradient(rgba(74, 18, 32, 0.88), rgba(74, 18, 32, 0.93)), url('/branding/temple-illustration.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+/* Ornamental rule used between sections in place of a plain border. */
+.temple-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  color: theme('colors.brass');
+}
+.temple-divider::before,
+.temple-divider::after {
+  content: '';
+  height: 1px;
+  width: 3rem;
+  background: currentColor;
+  opacity: 0.5;
 }

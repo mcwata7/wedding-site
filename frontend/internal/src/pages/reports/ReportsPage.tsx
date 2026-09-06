@@ -47,8 +47,8 @@ export function ReportsPage() {
 
         {[
           { title: 'Dietary & Accessibility', desc: 'Dietary requirements and accessibility needs per guest.', filename: 'dietary.csv', path: `${base}/dietary.csv` },
+          { title: 'Guest List', desc: 'Relationship, side, attendance probability, passport, and room assignment per guest.', filename: 'guest-list.csv', path: `${base}/guest-list.csv` },
           { title: 'Rooming List', desc: 'Room assignments with check-in/out dates.', filename: 'rooming.csv', path: `${base}/rooming.csv` },
-          { title: 'Budget Summary', desc: 'Planned vs. actual spend by category.', filename: 'budget.csv', path: `${base}/budget.csv` },
         ].map(({ title, desc, filename, path }) => (
           <div key={filename} className="bg-white rounded-lg border border-gray-200 p-6 flex items-center gap-4">
             <div className="flex-1">

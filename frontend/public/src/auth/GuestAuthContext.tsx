@@ -12,27 +12,29 @@ interface GuestAuthCtx {
 const GuestAuthContext = createContext<GuestAuthCtx | null>(null)
 
 export function GuestAuthProvider({ children }: { children: ReactNode }) {
-  // Unlike the planner UI (memory-only token), guest sessions persist in sessionStorage:
-  // low-sensitivity content, mobile guests refresh constantly, and the 2-hour token would
-  // otherwise force re-verification on every navigation.
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-
-  useEffect(() => {
-    const stored = sessionStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      setToken(stored)
-      setIsAuthenticated(true)
-    }
-  }, [])
+  // Unlike the planner UI (memory-only token), guest sessions persist in localStorage:
+  // low-sensitivity content, and guests come back to the site repeatedly over months from the
+  // same phone -- sessionStorage would make them re-verify every time they closed the tab.
+  // Paired with a long (30-day) guest token server-side.
+  //
+  // Rehydration must be synchronous (lazy initial state), not a useEffect: GuestRoute reads
+  // isAuthenticated on the very first render and effects run after that commit, so a `false`
+  // starting value would redirect to /unlock on every hard refresh before the effect ever ran
+  // -- discarding the current URL, including any #section hash, in the process.
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) { setToken(stored); return true }
+    return false
+  })
 
   const login = useCallback((token: string) => {
-    sessionStorage.setItem(STORAGE_KEY, token)
+    localStorage.setItem(STORAGE_KEY, token)
     setToken(token)
     setIsAuthenticated(true)
   }, [])
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(STORAGE_KEY)
     setToken(null)
     setIsAuthenticated(false)
   }, [])

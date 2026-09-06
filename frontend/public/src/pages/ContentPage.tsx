@@ -1,12 +1,15 @@
 import { Navigate, useParams } from 'react-router-dom'
-import { useSiteConfig } from '../api/hooks'
-import { LoadingSpinner, ErrorMessage, PageHeading } from '../components'
+import { useSiteConfig, siteMediaUrl } from '../api/hooks'
+import { LoadingSpinner, ErrorMessage, PageHeading, PageBanner } from '../components'
 import { ApiRequestError } from '../api/client'
 
-/** Renders any visible site_page beyond Home/Schedule/Travel/Things To Do (e.g. FAQ once the
- * planner flips it on) with zero code changes — just heading + body text. */
-export function ContentPage() {
-  const { slug } = useParams<{ slug: string }>()
+/** Renders any visible site_page without a dedicated page component (currently just RSVP)
+ * with zero code changes — just heading + body text. Takes an optional `slug` so the
+ * single-page composite can render a generic section (its slug already known from config)
+ * without going through the route param this component also serves as `/:slug`. */
+export function ContentPage({ slug: slugProp }: { slug?: string } = {}) {
+  const { slug: routeSlug } = useParams<{ slug: string }>()
+  const slug = slugProp ?? routeSlug
   const { data, isLoading, error } = useSiteConfig()
 
   if (isLoading) return <LoadingSpinner />
@@ -18,7 +21,8 @@ export function ContentPage() {
 
   return (
     <div>
-      <PageHeading title={page.label} />
+      <PageBanner src={siteMediaUrl(page.image_id)} />
+      <PageHeading title={page.heading || page.label} />
       {page.body ? (
         <p className="max-w-2xl mx-auto text-ink/80 whitespace-pre-line leading-relaxed">{page.body}</p>
       ) : (

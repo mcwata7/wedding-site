@@ -8,25 +8,36 @@ export interface SiteSettings {
   id: string
   partner_one_name: string
   partner_two_name: string
-  wedding_date?: string
+  wedding_start_date?: string
+  wedding_end_date?: string
   display_timezone: string
   hero_image_id?: string
   hero_tagline?: string
-  home_heading?: string
-  home_body?: string
-  travel_heading?: string
-  travel_body?: string
-  things_to_do_heading?: string
-  things_to_do_body?: string
-  schedule_heading?: string
-  schedule_body?: string
+  site_layout?: 'MULTI_PAGE' | 'SINGLE_PAGE'
+  // Site-wide styling -- keys mirrored in frontend/internal/src/api/types.ts and validated
+  // against InternalDataController.java's SITE_FONTS/FONT_SIZES sets. null/undefined means
+  // "use the guest app's built-in look" (src/lib/theme.ts).
+  header_font_family?: string
+  header_font_color?: string
+  header_font_size?: 'SMALL' | 'MEDIUM' | 'LARGE'
+  header_bg_color?: string
+  site_font_family?: string
+  site_font_color?: string
+  site_font_size?: 'SMALL' | 'MEDIUM' | 'LARGE'
+  site_bg_color?: string
+  tile_bg_color?: string
+  tile_border_color?: string
+  home_design_image_id?: string
+  home_design_only?: boolean
 }
 
 export interface SitePage {
   slug: string
   label: string
+  heading?: string
   sort_order: number
   body?: string
+  image_id?: string
 }
 
 export interface SiteConfig {
@@ -52,6 +63,36 @@ export interface ThingToDoItem {
   description?: string
   image_id?: string
   sort_order: number
+}
+
+export interface FaqItem {
+  id: string
+  question: string
+  answer?: string
+  sort_order: number
+}
+
+export interface TravelHotel {
+  id: string
+  name: string
+  address?: string
+  url?: string
+  description?: string
+  sort_order: number
+}
+
+export interface TravelFlight {
+  id: string
+  route_name: string
+  duration?: string
+  estimated_cost?: string
+  description?: string
+  sort_order: number
+}
+
+export interface TravelInfo {
+  hotels: TravelHotel[]
+  flights: TravelFlight[]
 }
 
 export interface InviteLookup {

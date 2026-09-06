@@ -1,5 +1,14 @@
 import type { ApiError } from './types'
 
+// Empty by default: relative paths hit the same origin, which nginx proxies to the API in
+// local/Docker Compose. Set at build time (e.g. Render static site) when the frontend and API
+// are deployed to different origins.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+
+export function mediaUrl(id: string): string {
+  return `${API_BASE_URL}/api/v1/media/${id}`
+}
+
 let _token: string | null = null
 let _onUnauthorized: (() => void) | null = null
 
@@ -33,7 +42,7 @@ async function rawRequest(path: string, init: RequestInit = {}): Promise<Respons
   }
   if (_token) headers['Authorization'] = `Bearer ${_token}`
 
-  const res = await fetch(path, { ...init, headers })
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
 
   if (res.status === 401) {
     _onUnauthorized?.()
@@ -78,6 +87,7 @@ export const api = {
     request<T>(path, { method: 'PUT', body: JSON.stringify(body) }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
   postForm: <T>(path: string, form: FormData) =>
     request<T>(path, { method: 'POST', body: form }),
   downloadCsv: async (path: string, filename: string) => {
@@ -87,5 +97,9 @@ export const api = {
   downloadBlob: async (path: string, filename: string) => {
     const res = await rawRequest(path)
     saveBlob(await res.blob(), filename)
+  },
+  postBlob: async (path: string, body: unknown): Promise<Blob> => {
+    const res = await rawRequest(path, { method: 'POST', body: JSON.stringify(body) })
+    return res.blob()
   },
 }

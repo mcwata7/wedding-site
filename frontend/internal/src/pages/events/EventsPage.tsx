@@ -1,41 +1,45 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Archive } from 'lucide-react'
 import {
   useEvents, useVenues, useCreateEvent, useCreateVenue,
-  useUpdateResource, useArchiveResource, useParties, useAddEligibleParty,
+  useUpdateResource, useArchiveResource,
 } from '../../api/hooks'
 import {
   Button, Modal, Field, Input, TextArea, Select, Table,
-  LoadingSpinner, ErrorMessage, PageHeader, useToast, Badge,
+  LoadingSpinner, ErrorMessage, PageHeader, useToast, Badge, MediaPicker,
 } from '../../components'
-import { ApiRequestError } from '../../api/client'
-import { fmtDateTime, fmtDate } from '../../lib/format'
+import { ApiRequestError, mediaUrl } from '../../api/client'
+import { fmtDateTime, fmtDate, fmtMoney } from '../../lib/format'
 import type { Event, Venue } from '../../api/types'
+import { VenueRoomsManager } from '../venues/VenueRoomsManager'
+import { VenueFeesManager } from '../venues/VenueFeesManager'
 
 export function EventsPage() {
   const toast = useToast()
+  const navigate = useNavigate()
   const { data: events, isLoading: eventsLoading, error: eventsError } = useEvents()
   const { data: venues } = useVenues()
-  const { data: parties } = useParties()
 
   const createEvent = useCreateEvent()
   const createVenue = useCreateVenue()
   const updateResource = useUpdateResource()
   const archiveResource = useArchiveResource()
-  const addEligible = useAddEligibleParty()
 
   const [tab, setTab] = useState<'events' | 'venues'>('events')
 
   const [showCreateEvent, setShowCreateEvent] = useState(false)
-  const [showCreateVenue, setShowCreateVenue] = useState(false)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
-  const [editVenue, setEditVenue] = useState<Venue | null>(null)
-  const [eligibilityEvent, setEligibilityEvent] = useState<Event | null>(null)
+
+  // Venue modal: null activeVenueId means a new, unsaved venue (no id to hang rooms off yet);
+  // a string means an existing venue, whose Rooms section is shown immediately.
+  const [showVenueModal, setShowVenueModal] = useState(false)
+  const [activeVenueId, setActiveVenueId] = useState<string | null>(null)
 
   const emptyEventForm = { name: '', venue_id: '', description: '', starts_at: '', ends_at: '', dress_code: '', capacity: '', rsvp_deadline: '', public_visible: 'true' }
   const [eventForm, setEventForm] = useState<Record<string, string>>(emptyEventForm)
 
-  const emptyVenueForm = { name: '', address: '', contact_information: '', pricing: '', capacity: '', food_score: '', view_score: '', notes: '' }
+  const emptyVenueForm = { name: '', address: '', contact_information: '', capacity: '', notes: '', image_id: '', distance_from_ktm_km: '', transportation_required: 'false', room_block_min: '', room_block_max: '' }
   const [venueForm, setVenueForm] = useState<Record<string, string>>(emptyVenueForm)
 
   const setEventField = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -82,20 +86,21 @@ export function EventsPage() {
 
   const submitVenue = async (e: React.FormEvent) => {
     e.preventDefault()
-    const body: Record<string, unknown> = { ...venueForm }
-    if (!body.capacity) delete body.capacity; else body.capacity = Number(body.capacity)
-    if (!body.food_score) delete body.food_score; else body.food_score = Number(body.food_score)
-    if (!body.view_score) delete body.view_score; else body.view_score = Number(body.view_score)
+    const body: Record<string, unknown> = { ...venueForm, transportation_required: venueForm.transportation_required === 'true' }
+    for (const k of ['capacity', 'distance_from_ktm_km', 'room_block_min', 'room_block_max']) {
+      if (!body[k]) delete body[k]; else body[k] = Number(body[k])
+    }
+    if (!body.image_id) delete body.image_id
     try {
-      if (editVenue) {
-        await updateResource.mutateAsync({ resource: 'venues', id: editVenue.id, body })
+      if (activeVenueId) {
+        await updateResource.mutateAsync({ resource: 'venues', id: activeVenueId, body })
         toast.success('Venue updated.')
-        setEditVenue(null)
       } else {
-        await createVenue.mutateAsync(body)
-        toast.success('Venue created.')
-        setShowCreateVenue(false)
-        setVenueForm(emptyVenueForm)
+        // Keep the modal open and switch into "editing" mode for the venue just created, so
+        // its Rooms/Fees sections (which need a venue_id) become available without reopening.
+        const created = await createVenue.mutateAsync(body)
+        setActiveVenueId(created.id)
+        toast.success('Venue created. Add rooms and fees below, then close when done.')
       }
     } catch (err) {
       toast.error(err instanceof ApiRequestError ? err.message : 'Failed.')
@@ -120,11 +125,24 @@ export function EventsPage() {
   const openEditVenue = (v: Venue) => {
     setVenueForm({
       name: v.name, address: v.address ?? '', contact_information: v.contact_information ?? '',
-      pricing: v.pricing ?? '', capacity: v.capacity?.toString() ?? '',
-      food_score: v.food_score?.toString() ?? '', view_score: v.view_score?.toString() ?? '',
-      notes: v.notes ?? '',
+      capacity: v.capacity?.toString() ?? '', notes: v.notes ?? '', image_id: v.image_id ?? '',
+      distance_from_ktm_km: v.distance_from_ktm_km?.toString() ?? '',
+      transportation_required: v.transportation_required ? 'true' : 'false',
+      room_block_min: v.room_block_min?.toString() ?? '', room_block_max: v.room_block_max?.toString() ?? '',
     })
-    setEditVenue(v)
+    setActiveVenueId(v.id)
+    setShowVenueModal(true)
+  }
+
+  const openAddVenue = () => {
+    setVenueForm(emptyVenueForm)
+    setActiveVenueId(null)
+    setShowVenueModal(true)
+  }
+
+  const closeVenueModal = () => {
+    setShowVenueModal(false)
+    setActiveVenueId(null)
   }
 
   const handleArchiveEvent = async (ev: Event) => {
@@ -147,16 +165,6 @@ export function EventsPage() {
     }
   }
 
-  const handleAddEligibility = async (partyId: string) => {
-    if (!eligibilityEvent) return
-    try {
-      await addEligible.mutateAsync({ eventId: eligibilityEvent.id, partyId })
-      toast.success('Party marked eligible. RSVPs created.')
-    } catch (err) {
-      toast.error(err instanceof ApiRequestError ? err.message : 'Failed.')
-    }
-  }
-
   const eventColumns = [
     { key: 'name', header: 'Event' },
     { key: 'starts_at', header: 'Starts', render: (r: Event) => fmtDateTime(r.starts_at) },
@@ -169,7 +177,6 @@ export function EventsPage() {
       render: (r: Event) => (
         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
           <Button size="sm" variant="ghost" onClick={() => openEditEvent(r)}>Edit</Button>
-          <Button size="sm" variant="ghost" onClick={() => setEligibilityEvent(r)}>Eligibility</Button>
           <Button size="sm" variant="ghost" onClick={() => handleArchiveEvent(r)}><Archive size={14} /></Button>
         </div>
       ),
@@ -177,11 +184,16 @@ export function EventsPage() {
   ]
 
   const venueColumns = [
+    {
+      key: 'image_id', header: '',
+      render: (r: Venue) => r.image_id
+        ? <img src={mediaUrl(r.image_id)} alt="" className="h-10 w-10 rounded object-cover border border-gray-200" />
+        : <div className="h-10 w-10 rounded bg-gray-100" />,
+    },
     { key: 'name', header: 'Venue' },
-    { key: 'address', header: 'Address', render: (r: Venue) => r.address || '—' },
-    { key: 'capacity', header: 'Capacity', render: (r: Venue) => r.capacity ?? '—' },
-    { key: 'food_score', header: 'Food', render: (r: Venue) => r.food_score ?? '—' },
-    { key: 'view_score', header: 'View', render: (r: Venue) => r.view_score ?? '—' },
+    { key: 'distance_from_ktm_km', header: 'Dist. from KTM', render: (r: Venue) => r.distance_from_ktm_km != null ? `${r.distance_from_ktm_km} km` : '—' },
+    { key: 'room_block_rooms', header: 'Rooms', render: (r: Venue) => r.room_block_rooms ?? '—' },
+    { key: 'total_fees', header: 'Fees', render: (r: Venue) => fmtMoney(r.total_fees) },
     {
       key: 'actions', header: '',
       render: (r: Venue) => (
@@ -195,7 +207,7 @@ export function EventsPage() {
 
   const venueOptions = (venues ?? []).map(v => ({ value: v.id, label: v.name }))
 
-  const EventForm = ({ onClose }: { onClose: () => void }) => (
+  const renderEventForm = (onClose: () => void) => (
     <form onSubmit={submitEvent} className="space-y-3">
       <Field label="Event Name" required><Input required value={eventForm.name} onChange={setEventField('name')} /></Field>
       <Field label="Venue">
@@ -227,20 +239,34 @@ export function EventsPage() {
     </form>
   )
 
-  const VenueForm = ({ onClose }: { onClose: () => void }) => (
+  const renderVenueForm = (onClose: () => void) => (
     <form onSubmit={submitVenue} className="space-y-3">
       <Field label="Venue Name" required><Input required value={venueForm.name} onChange={setVenueField('name')} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Distance from KTM (km)"><Input type="number" step="0.1" min="0" value={venueForm.distance_from_ktm_km} onChange={setVenueField('distance_from_ktm_km')} /></Field>
+        <Field label="Capacity"><Input type="number" min="1" value={venueForm.capacity} onChange={setVenueField('capacity')} /></Field>
+      </div>
       <Field label="Address"><Input value={venueForm.address} onChange={setVenueField('address')} /></Field>
       <Field label="Contact Information"><Input value={venueForm.contact_information} onChange={setVenueField('contact_information')} /></Field>
-      <div className="grid grid-cols-3 gap-3">
-        <Field label="Capacity"><Input type="number" min="1" value={venueForm.capacity} onChange={setVenueField('capacity')} /></Field>
-        <Field label="Food Score (1-10)"><Input type="number" min="1" max="10" value={venueForm.food_score} onChange={setVenueField('food_score')} /></Field>
-        <Field label="View Score (1-10)"><Input type="number" min="1" max="10" value={venueForm.view_score} onChange={setVenueField('view_score')} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Room Block Min"><Input type="number" min="0" value={venueForm.room_block_min} onChange={setVenueField('room_block_min')} /></Field>
+        <Field label="Room Block Max"><Input type="number" min="0" value={venueForm.room_block_max} onChange={setVenueField('room_block_max')} /></Field>
       </div>
-      <Field label="Pricing"><Input value={venueForm.pricing} onChange={setVenueField('pricing')} placeholder="e.g. 50000 NPR / day" /></Field>
+      <label className="flex items-center gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={venueForm.transportation_required === 'true'}
+          onChange={e => setVenueForm(f => ({ ...f, transportation_required: e.target.checked ? 'true' : 'false' }))}
+          className="rounded border-gray-300"
+        />
+        Guests need transportation arranged
+      </label>
+      <Field label="Venue Image">
+        <MediaPicker value={venueForm.image_id} onChange={v => setVenueForm(f => ({ ...f, image_id: v }))} filter={m => m.content_type.startsWith('image/')} />
+      </Field>
       <Field label="Notes"><TextArea value={venueForm.notes} onChange={setVenueField('notes')} /></Field>
       <div className="flex justify-end gap-2 pt-2">
-        <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
+        <Button variant="secondary" type="button" onClick={onClose}>Close</Button>
         <Button type="submit" disabled={createVenue.isPending || updateResource.isPending}>Save</Button>
       </div>
     </form>
@@ -249,7 +275,7 @@ export function EventsPage() {
   return (
     <div>
       <PageHeader title="Events & Venues">
-        <Button size="sm" variant="secondary" onClick={() => { setVenueForm(emptyVenueForm); setShowCreateVenue(true) }}>
+        <Button size="sm" variant="secondary" onClick={openAddVenue}>
           <Plus size={14} /> Add Venue
         </Button>
         <Button size="sm" onClick={() => { setEventForm(emptyEventForm); setShowCreateEvent(true) }}>
@@ -279,42 +305,30 @@ export function EventsPage() {
 
       {tab === 'venues' && (
         <>
-          {venues && <Table columns={venueColumns} rows={venues} />}
+          {venues && <Table columns={venueColumns} rows={venues} onRowClick={v => navigate(`/venues/${v.id}`)} />}
         </>
       )}
 
       <Modal open={showCreateEvent} onClose={() => setShowCreateEvent(false)} title="Add Event" size="lg">
-        <EventForm onClose={() => setShowCreateEvent(false)} />
+        {renderEventForm(() => setShowCreateEvent(false))}
       </Modal>
 
       <Modal open={!!editEvent} onClose={() => setEditEvent(null)} title="Edit Event" size="lg">
-        <EventForm onClose={() => setEditEvent(null)} />
+        {renderEventForm(() => setEditEvent(null))}
       </Modal>
 
-      <Modal open={showCreateVenue} onClose={() => setShowCreateVenue(false)} title="Add Venue" size="lg">
-        <VenueForm onClose={() => setShowCreateVenue(false)} />
-      </Modal>
-
-      <Modal open={!!editVenue} onClose={() => setEditVenue(null)} title="Edit Venue" size="lg">
-        <VenueForm onClose={() => setEditVenue(null)} />
-      </Modal>
-
-      {/* Eligibility Modal */}
-      <Modal open={!!eligibilityEvent} onClose={() => setEligibilityEvent(null)} title={`Eligibility — ${eligibilityEvent?.name}`} size="lg">
-        <p className="text-sm text-gray-600 mb-3">Click a party to mark them eligible for this event. RSVPs will be created automatically for all active guests in the party.</p>
-        <div className="space-y-1 max-h-80 overflow-y-auto">
-          {(parties ?? []).map(p => (
-            <div key={p.id} className="flex items-center justify-between py-2 px-3 rounded hover:bg-gray-50">
-              <span className="text-sm text-gray-800">{p.display_name}</span>
-              <Button size="sm" variant="secondary" onClick={() => handleAddEligibility(p.id)} disabled={addEligible.isPending}>
-                Add
-              </Button>
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-end pt-2">
-          <Button variant="secondary" onClick={() => setEligibilityEvent(null)}>Close</Button>
-        </div>
+      <Modal open={showVenueModal} onClose={closeVenueModal} title={activeVenueId ? 'Edit Venue' : 'Add Venue'} size="xl">
+        {renderVenueForm(closeVenueModal)}
+        {activeVenueId && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <VenueRoomsManager venueId={activeVenueId} />
+          </div>
+        )}
+        {activeVenueId && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <VenueFeesManager venueId={activeVenueId} />
+          </div>
+        )}
       </Modal>
     </div>
   )

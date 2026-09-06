@@ -1,5 +1,10 @@
 import type { ApiError } from './types'
 
+// Empty by default: relative paths hit the same origin, which nginx proxies to the API in
+// local/Docker Compose. Set at build time (e.g. Render static site) when the frontend and API
+// are deployed to different origins.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? ''
+
 let _token: string | null = null
 let _onUnauthorized: (() => void) | null = null
 
@@ -31,9 +36,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   if (_token) headers['Authorization'] = `Bearer ${_token}`
 
-  const res = await fetch(path, { ...init, headers })
+  const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
 
-  if (res.status === 401) {
+  // Only a 401 on a request that actually carried a token means "your session expired". A 401 on
+  // the unauthenticated unlock endpoints means the verification answer was wrong, and its body
+  // carries the message the guest needs (including how many attempts they have left) -- so let it
+  // fall through to the generic handler below rather than replacing it with a session notice.
+  if (res.status === 401 && _token) {
     _onUnauthorized?.()
     throw new ApiRequestError('UNAUTHORIZED', 'Session expired. Please verify again.', 401)
   }
