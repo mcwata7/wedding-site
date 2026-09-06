@@ -2,7 +2,7 @@ databases:
   - name: wedding-db
     databaseName: wedding
     user: wedding
-    plan: 0.1c-256mb # cheapest paid plan -- free Postgres on Render expires after 30 days
+    plan: free # cheapest paid plan -- free Postgres on Render expires after 30 days
     postgresMajorVersion: "16"
 
 services:
