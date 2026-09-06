@@ -49,7 +49,8 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     routes:
-      - path: /*
+      - type: rewrite
+        source: /*
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
@@ -63,7 +64,8 @@ services:
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     routes:
-      - path: /*
+      - type: rewrite
+        source: /*
         destination: /index.html
     envVars:
       - key: VITE_API_BASE_URL
