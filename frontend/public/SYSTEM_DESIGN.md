@@ -167,7 +167,8 @@ All server state lives in TanStack Query (`src/api/hooks.ts`), same as the plann
 - **Icons:** `lucide-react` (installed for consistency with the planner app; not currently used by any page).
 - **Type checking as CI gate:** `npm run build` runs `tsc` before `vite build`, same convention as the planner app.
 - **Local dev:** `npm run dev` serves on `:3001` and proxies `/api` to `PUBLIC_UI_API_BASE_URL` (default `http://localhost:8080`) per `vite.config.ts`.
-- **Production:** multi-stage `Dockerfile` — `npm ci && npm run build`, then `nginx:1.27-alpine` serves `dist/` and reverse-proxies `/api/` to the `api` service (`nginx.conf`), falling back unmatched routes to `index.html`. Compose service name `web-public`, host port `3001`.
+- **Production (local Compose):** multi-stage `Dockerfile` — `npm ci && npm run build`, then `nginx:1.27-alpine` serves `dist/` and reverse-proxies `/api/` to the `api` service (`nginx.conf`), falling back unmatched routes to `index.html`. Compose service name `web-public`, host port `3001`.
+- **Production (deployed):** built with `VITE_API_BASE_URL` set to the API's public hostname and deployed to Firebase Hosting (`firebase.json`, `guest` target) — see root `SYSTEM_DESIGN.md` §10. `nginx.conf`/`Dockerfile` above remain the Compose-dev path only.
 
 ## 12. Design Decisions and Edge Cases
 

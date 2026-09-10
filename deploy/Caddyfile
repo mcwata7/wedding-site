@@ -1,0 +1,33 @@
+# TLS termination for the API, with no custom domain: {$API_HOSTNAME} is a static GCP external IP
+# resolved through sslip.io (e.g. api.34-1-2-3.sslip.io -> 34.1.2.3). sslip.io is on the Public
+# Suffix List, so Let's Encrypt rate limits apply to this one subdomain, not a shared zone -- see
+# docs/DECISIONS.md for why this beats Cloudflare Tunnel (needs a Cloudflare-hosted domain for a
+# stable hostname) or a bare-IP cert (LE won't issue one).
+#
+# First deploy: point the ACME CA at LE's staging endpoint below to avoid burning production rate
+# limits while you get DNS/ports right, then remove the override and restart `proxy` for a real cert.
+{
+	email {$ACME_EMAIL}
+	admin off
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+{$API_HOSTNAME} {
+	encode zstd gzip
+
+	@media path /api/v1/media/*
+	header @media Cache-Control "public, max-age=604800"
+
+	reverse_proxy api:8080 {
+		health_uri /actuator/health
+		health_interval 30s
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MB
+			roll_keep 3
+		}
+		format json
+	}
+}

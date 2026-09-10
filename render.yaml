@@ -1,8 +1,14 @@
+# SUPERSEDED: this Blueprint is a dormant fallback, kept as a working one-command escape hatch.
+# The live deployment is on a self-hosted GCP e2-micro VM (backend + Postgres) with both
+# frontends on Firebase Hosting -- see `deploy/`, SYSTEM_DESIGN.md §10, and docs/DECISIONS.md for
+# why (Render's free Postgres expires after 30 days; GCP's Always-Free tier runs the same stack
+# for $0-4/mo). If the VM ever goes down hard, this file still stands up a working replacement.
 databases:
   - name: wedding-db
     databaseName: wedding
     user: wedding
-    plan: free # cheapest paid plan -- free Postgres on Render expires after 30 days
+    plan: basic-256mb # $6/mo, cheapest paid plan -- free Postgres on Render expires 30 days
+                       # after creation, which defeats the point of a standby escape hatch
     postgresMajorVersion: "16"
 
 services:

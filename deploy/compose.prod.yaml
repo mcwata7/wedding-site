@@ -1,0 +1,121 @@
+# Production compose file for the GCP e2-micro VM. NOT used locally -- local dev uses
+# ../compose.yaml (which has JDWP, published DB/API ports, and no memory limits, none of which
+# belong on a public host with 1GB RAM). See SYSTEM_DESIGN.md §10 and docs/DECISIONS.md for why.
+#
+# Run on the VM:
+#   docker compose -f deploy/compose.prod.yaml --env-file /opt/wedding/.env up -d
+#
+# Required env vars (see .env.example): POSTGRES_PASSWORD, JWT_SECRET, ADMIN_EMAIL,
+# ADMIN_PASSWORD, PUBLIC_SITE_URL, WEDDING_CORS_ALLOWED_ORIGINS, API_IMAGE, API_HOSTNAME,
+# ACME_EMAIL. SLACK_WEB_HOOK is optional.
+name: wedding # pins volume names (wedding_postgres-data, wedding_media-data, ...) regardless
+              # of the directory this is checked out into.
+
+x-logging: &default-logging
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" } # unbounded logs will fill the 30GB disk.
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: wedding
+      POSTGRES_USER: wedding
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+    # Tuned for a 256MB cgroup limit on a 0.25 vCPU box -- see SYSTEM_DESIGN.md §10.
+    # max_connections(20) * work_mem(4MB) = 80MB worst case, fits alongside 96MB shared_buffers.
+    # Parallel query disabled outright: pure overhead on one burstable core.
+    # synchronous_commit=off risks the last ~200ms of commits on a hard crash -- acceptable for
+    # RSVPs, bounded by the nightly backup.sh dump.
+    command: >
+      postgres
+      -c shared_buffers=96MB
+      -c effective_cache_size=256MB
+      -c work_mem=4MB
+      -c maintenance_work_mem=32MB
+      -c max_connections=20
+      -c wal_buffers=4MB
+      -c max_wal_size=512MB
+      -c min_wal_size=80MB
+      -c random_page_cost=1.1
+      -c synchronous_commit=off
+      -c max_worker_processes=2
+      -c max_parallel_workers=0
+      -c max_parallel_workers_per_gather=0
+      -c autovacuum_max_workers=1
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    shm_size: 128mb # Docker's 64MB default /dev/shm can trip Postgres.
+    mem_limit: 256m
+    memswap_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wedding -d wedding"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *default-logging
+    # No published ports -- reachable only on the compose network, never from the internet.
+
+  api:
+    image: ${API_IMAGE:?required} # e.g. us-west1-docker.pkg.dev/<project>/wedding/api:<sha> -- built
+                                   # in CI, never on the VM (see .github/workflows/deploy.yml and
+                                   # docs/DECISIONS.md: a cold Gradle build won't fit in 1GB RAM).
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/wedding
+      SPRING_DATASOURCE_USERNAME: wedding
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "5"
+      SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+      WEDDING_MEDIA_DIR: /data/media
+      JWT_SECRET: ${JWT_SECRET:?required}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?required}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?required}
+      PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:?required} # https://<guest-site>.web.app -- QR payload
+      WEDDING_CORS_ALLOWED_ORIGINS: ${WEDDING_CORS_ALLOWED_ORIGINS:?required}
+      SLACK_WEB_HOOK: ${SLACK_WEB_HOOK:-}
+      # No JDWP here -- see ../compose.yaml for the dev-only debug port. Flags tuned to fit a
+      # 512MB cgroup limit: MaxRAMPercentage=70 of 512MB -> ~358MB heap; SerialGC because G1's
+      # concurrent threads cost 30-50MB and CPU this box doesn't have at 0.25 vCPU.
+      JAVA_TOOL_OPTIONS: >-
+        -XX:MaxRAMPercentage=70.0 -XX:InitialRAMPercentage=40.0
+        -XX:MaxMetaspaceSize=128m -Xss512k -XX:+UseSerialGC
+        -XX:TieredStopAtLevel=1 -Dspring.jmx.enabled=false
+        -Djava.security.egd=file:/dev/urandom
+    volumes: [media-data:/data/media]
+    mem_limit: 512m
+    memswap_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
+    logging: *default-logging
+    # No published ports -- Caddy reaches api:8080 over the compose network.
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on: [api]
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      API_HOSTNAME: ${API_HOSTNAME:?required} # api.<dashed-ip>.sslip.io -- see Caddyfile
+      ACME_EMAIL: ${ACME_EMAIL:?required}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data     # MUST persist -- holds the Let's Encrypt cert. Losing it re-requests
+                              # a cert on every redeploy and risks LE rate limits.
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    mem_limit: 64m
+    logging: *default-logging
+
+volumes:
+  postgres-data:
+  media-data:
+  caddy-data:
+  caddy-config:
+  caddy-logs:

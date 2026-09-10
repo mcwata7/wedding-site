@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "misha-wedding"
+  },
+  "targets": {
+    "misha-wedding": {
+      "hosting": {
+        "guest": [
+          "misha-wedding"
+        ],
+        "planner": [
+          "rautanabe-planner"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

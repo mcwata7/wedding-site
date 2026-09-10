@@ -17,6 +17,57 @@ Format:
 
 ---
 
+## 2026-09-06 — Migrated production hosting from Render to a self-hosted GCP e2-micro VM + Firebase Hosting
+**Context:** Render's Postgres free plan expires 30 days after creation (becomes inaccessible, then
+deleted after a 14-day grace period), forcing a commitment to a paid DB plan (~$6/mo, the cheapest
+tier) to keep the site up. Before committing to that recurring cost, compared alternatives: Railway
+(usage-based billing — a minimal Postgres instance alone typically exceeds its $5/mo Hobby credit,
+landing around $15-25/mo total once the API is included — *more* expensive, and no free static
+hosting equivalent to Render's); AWS (no perpetual free compute for accounts created after July 2025,
+only a one-time $200 credit that eventually runs out; cheapest ongoing path is a ~$5-6/mo Lightsail
+instance); GCP (one Always-Free `e2-micro` VM — 1GB RAM, 30GB disk, three eligible US regions — with
+self-hosted Postgres).
+**Decision:** GCP. One `e2-micro` runs the Spring Boot API and Postgres together via Docker Compose
+(`deploy/compose.prod.yaml`); both frontends move to Firebase Hosting's free tier
+(`firebase.json`, `guest`/`planner` targets). No custom domain was purchased, so the API gets HTTPS
+via a static external IP resolved through `sslip.io` (e.g. `api.34-1-2-3.sslip.io`) with Caddy
+auto-provisioning the Let's Encrypt cert (`deploy/Caddyfile`) — sslip.io is on the Public Suffix
+List, so LE rate limits apply to that one subdomain, not a shared zone. The 1GB RAM budget is the
+dominant constraint: the JVM is capped via `-XX:MaxRAMPercentage=70.0`/`-XX:+UseSerialGC`/
+`-XX:TieredStopAtLevel=1` against a 512MB cgroup limit, Postgres is tuned to a 256MB limit
+(`max_connections=20`, parallel query disabled, `synchronous_commit=off`), and a 2GB swapfile
+absorbs spikes — see `deploy/compose.prod.yaml` and `backend/SYSTEM_DESIGN.md` §11. Backend images
+are built in GitHub Actions and pushed to Artifact Registry, never on the VM, because the
+`gradle:8.12-jdk21` build stage has no dependency cache/wrapper and a cold build needs more RAM than
+the VM has. Backups (nightly `pg_dump` + a tarball of the media volume, via `deploy/backup.sh`) go to
+a GCS bucket with a 90-day lifecycle rule, replacing what Render's managed Postgres provided.
+`render.yaml` is kept, not deleted, as a dormant fallback Blueprint — see its header comment.
+GCP's Always-Free documentation covers the instance, disk, and 1GB/mo North America egress but is
+silent on the external IPv4 address, which bills separately (~$0.005/hr, ~$3.65/mo on a standard
+VM); realistic cost is $0-4/month, not a guaranteed $0 — a budget alert should be set and actual
+billing checked after the first few days rather than assumed.
+**Rejected:**
+- Railway and AWS on cost grounds — see above.
+- Keeping both frontends on the VM behind Caddy instead of moving them to Firebase Hosting — avoids
+  CORS and keeps `VITE_API_BASE_URL` empty like local Compose, but spends roughly half the VM's spare
+  RAM headroom on two more containers and meters every static asset and guest photo view against the
+  VM's 1GB/month free egress allowance, which a photo-heavy wedding site would exhaust quickly; a VM
+  outage would also take the guest site down entirely rather than just the API.
+- Cloudflare Tunnel in place of the static-IP-plus-sslip.io approach — a stable *named* tunnel
+  requires a domain hosted on Cloudflare DNS, which doesn't exist here by choice; a *quick* tunnel
+  needs no domain but mints a new random `*.trycloudflare.com` hostname on every process restart,
+  which would break the API URL already baked into both frontends' build output on every VM reboot.
+- Buying a ~$12/yr domain now — deferred, not ruled out. The only migration cost later is a Caddyfile
+  hostname change, one `VITE_API_BASE_URL` rebuild, and one DNS record — see the flag in the
+  migration plan about `PUBLIC_SITE_URL` being baked into printed invitation-card QR codes, which is
+  the one place this choice is hard to reverse after the fact.
+- Building the backend image on the VM via `git pull && docker compose build` instead of CI — ruled
+  out specifically for the backend (see above); acceptable in principle for the two static frontends,
+  but Firebase Hosting deploy from CI was chosen for both anyway for consistency and because it
+  doesn't need Node/npm installed on the VM at all.
+
+---
+
 ## 2026-09-05 — Tile styling extends the site-styling theme, not a new mechanism
 **Context:** Following the header/site styling controls (below), the user asked for the same
 kind of control over the individual "tile" cards on Schedule, Travel, and Things To Do — each

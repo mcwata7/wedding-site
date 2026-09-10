@@ -1,0 +1,141 @@
+name: Deploy
+
+# Deploys on every push to main: backend image -> Artifact Registry -> pulled on the GCP VM;
+# both frontends -> Firebase Hosting. See deploy/compose.prod.yaml and SYSTEM_DESIGN.md §10 for
+# why the backend is built here rather than on the VM (a cold Gradle build won't fit in 1GB RAM).
+#
+# One-time setup required in this repo's Settings -> Secrets and variables -> Actions:
+#   Variables:
+#     GCP_PROJECT_ID          - the GCP project hosting the VM and Artifact Registry
+#     GCP_REGION              - e.g. us-west1 (must match where the VM/registry were created)
+#     GCP_ZONE                - e.g. us-west1-b
+#     GCP_VM_NAME             - e.g. wedding-vm
+#     API_HOSTNAME             - e.g. api.34-1-2-3.sslip.io (derived from the VM's static IP)
+#     PUBLIC_SITE_URL          - the guest site's Firebase URL, e.g. https://<id>.web.app
+#     WEDDING_CORS_ALLOWED_ORIGINS - comma-separated guest+planner .web.app/.firebaseapp.com origins
+#     FIREBASE_PROJECT_ID      - the Firebase project id (often same as GCP_PROJECT_ID)
+#   Secrets:
+#     GCP_WORKLOAD_IDENTITY_PROVIDER - Workload Identity Federation provider resource name
+#     GCP_SERVICE_ACCOUNT             - deployer service account email (impersonated via WIF)
+#     FIREBASE_SERVICE_ACCOUNT_JSON   - a Firebase service account key JSON (used by the hosting
+#                                       deploy action; Workload Identity isn't supported there yet)
+#
+# See the migration plan / SYSTEM_DESIGN.md §10 for how to create these.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write # required for Workload Identity Federation
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.tag.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - id: tag
+        run: |
+          IMAGE="${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/wedding/api:${{ github.sha }}"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ steps.tag.outputs.image }}
+            ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/wedding/api:latest
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  frontends:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+
+      - name: Build guest site
+        working-directory: frontend/public
+        env:
+          VITE_API_BASE_URL: https://${{ vars.API_HOSTNAME }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build planner UI
+        working-directory: frontend/internal
+        env:
+          VITE_API_BASE_URL: https://${{ vars.API_HOSTNAME }}
+        run: |
+          npm ci
+          npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          target: guest
+          channelId: live
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          target: planner
+          channelId: live
+
+  deploy-vm:
+    needs: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Pull deploy/ and restart the stack on the VM
+        run: |
+          gcloud compute ssh ${{ vars.GCP_VM_NAME }} \
+            --zone "${{ vars.GCP_ZONE }}" \
+            --tunnel-through-iap \
+            --command "
+              set -euo pipefail
+              cd /opt/wedding
+              git fetch --depth 1 origin main
+              git checkout -f origin/main -- deploy/
+              API_IMAGE='${{ needs.backend.outputs.image }}' \
+                docker compose -f deploy/compose.prod.yaml --env-file /opt/wedding/.env \
+                  up -d --pull always
+              docker image prune -af --filter 'until=168h'
+            "
+
+      - name: Smoke test
+        run: |
+          curl -fsS "https://${{ vars.API_HOSTNAME }}/actuator/health" | grep -q '"status":"UP"'

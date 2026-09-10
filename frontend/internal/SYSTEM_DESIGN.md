@@ -155,7 +155,8 @@ All server state lives in TanStack Query (`src/api/hooks.ts`); there is no separ
 - **Icons:** `lucide-react`.
 - **Type checking as CI gate:** `npm run build` runs `tsc` before `vite build`, so a type error fails the build outright.
 - **Local dev:** `npm run dev` serves on `:3000` and proxies `/api` to `INTERNAL_UI_API_BASE_URL` (default `http://localhost:8080`) per `vite.config.ts`.
-- **Production:** multi-stage `Dockerfile` — `npm ci && npm run build` in a Node build stage, then the static `dist/` output is served by `nginx:1.27-alpine` (`nginx.conf`), which also reverse-proxies `/api/` to the `api` service inside the compose network and falls back unmatched routes to `index.html` for client-side routing.
+- **Production (local Compose):** multi-stage `Dockerfile` — `npm ci && npm run build` in a Node build stage, then the static `dist/` output is served by `nginx:1.27-alpine` (`nginx.conf`), which also reverse-proxies `/api/` to the `api` service inside the compose network and falls back unmatched routes to `index.html` for client-side routing.
+- **Production (deployed):** built with `VITE_API_BASE_URL` set to the API's public hostname and deployed to Firebase Hosting (`firebase.json`, `planner` target) — see root `SYSTEM_DESIGN.md` §10. `nginx.conf`/`Dockerfile` above remain the Compose-dev path only; Firebase serves the same `dist/` output with its own SPA rewrite instead of nginx's `try_files`.
 - **Sibling app:** `frontend/public/` is the separately-deployed guest-facing site (`web-public` in compose, port 3001) — same stack and build shape, but its own package with its own `SYSTEM_DESIGN.md`; the two apps share no code.
 
 ## 12. Design Decisions and Edge Cases
