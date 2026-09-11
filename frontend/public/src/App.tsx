@@ -8,7 +8,7 @@ import { ThingsToDoPage } from './pages/ThingsToDoPage'
 import { FaqPage } from './pages/FaqPage'
 import { ContentPage } from './pages/ContentPage'
 import { OnePage } from './pages/OnePage'
-import { LoadingSpinner } from './components'
+import { LoadingSpinner, ScrollToTopButton } from './components'
 import { useSiteConfig, useSiteLayout, useSectionPages, ROUTED_SLUGS } from './api/hooks'
 import { useActiveSection, useOverflowFade } from './lib/scroll'
 import { useSiteTheme, type HeaderTheme } from './lib/theme'
@@ -78,7 +78,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <header
-        className="border-b-2 border-maroon/20 bg-paper/95 backdrop-blur sticky top-0 z-40"
+        className="border-b-2 border-maroon/20 bg-paper/95"
         style={{ backgroundColor: theme.style.backgroundColor }}
       >
         <nav
@@ -96,6 +96,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       <main className="flex-1">
         <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">{isLoading ? <LoadingSpinner /> : children}</div>
       </main>
+      <ScrollToTopButton />
     </div>
   )
 }

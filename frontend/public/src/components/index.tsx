@@ -1,4 +1,5 @@
-import { createContext, useContext, useCallback, useState, type ReactNode } from 'react'
+import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { scrollToSection } from '../lib/scroll'
 
 // --- Toast ---
 interface Toast {
@@ -82,15 +83,41 @@ export function PageHeading({ eyebrow, title }: { eyebrow?: string; title: strin
 }
 
 /** Wraps one page's content as an anchored section for single-page mode: gives it the nav's
- * scroll target (`id`) and enough scroll-margin to clear the sticky header, and drops the
- * heading level inside to h2. Vertical spacing between sections is left to the caller (a
- * `space-y-*` on the list) rather than margins here, so the first section -- typically Home,
- * whose hero relies on negative margins to break out of the page padding -- isn't pushed down. */
+ * scroll target (`id`) and drops the heading level inside to h2. Vertical spacing between
+ * sections is left to the caller (a `space-y-*` on the list) rather than margins here, so the
+ * first section -- typically Home, whose hero relies on negative margins to break out of the
+ * page padding -- isn't pushed down. */
 export function Section({ id, children }: { id: string; children: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-20 sm:scroll-mt-24">
+    <section id={id}>
       <HeadingLevelContext.Provider value="h2">{children}</HeadingLevelContext.Provider>
     </section>
+  )
+}
+
+/** Floating button that appears once the guest has scrolled away from the top of the page (the
+ * header now scrolls off with the rest of the content, so this is the way back up) and jumps to
+ * top on click. Sits at bottom-left so it never overlaps the toast stack's bottom-right corner. */
+export function ScrollToTopButton() {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400)
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  if (!visible) return null
+  return (
+    <button
+      type="button"
+      onClick={() => scrollToSection(undefined, { smooth: true })}
+      aria-label="Scroll to top"
+      className="fixed bottom-4 left-4 z-40 w-10 h-10 rounded-full bg-accent text-white shadow-lg flex items-center justify-center text-lg hover:bg-accent/90 transition-colors"
+    >
+      ↑
+    </button>
   )
 }
 
