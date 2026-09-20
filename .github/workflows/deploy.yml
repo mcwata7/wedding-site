@@ -125,6 +125,12 @@ jobs:
       - uses: google-github-actions/setup-gcloud@v2
 
       - name: Pull deploy/ and restart the stack on the VM
+        # /opt/wedding is owned by the human account that first set it up; the deployer SA logs
+        # in over OS Login as its own generated user, which owns nothing there. `sudo -n` uses
+        # the passwordless sudo granted by roles/compute.osAdminLogin instead of chasing
+        # file/group permissions -- git's cross-user safe.directory check is disabled once via
+        # `sudo git config --system --add safe.directory /opt/wedding` on the VM (applies to
+        # every user, root included).
         run: |
           gcloud compute ssh ${{ vars.GCP_VM_NAME }} \
             --zone "${{ vars.GCP_ZONE }}" \
@@ -132,12 +138,13 @@ jobs:
             --command "
               set -euo pipefail
               cd /opt/wedding
-              git fetch --depth 1 origin main
-              git checkout -f origin/main -- deploy/
+              sudo -n git fetch --depth 1 origin main
+              sudo -n git checkout -f origin/main -- deploy/
               API_IMAGE='${{ needs.backend.outputs.image }}' \
-                docker compose -f deploy/compose.prod.yaml --env-file /opt/wedding/.env \
-                  up -d --pull always
-              docker image prune -af --filter 'until=168h'
+                sudo -n --preserve-env=API_IMAGE \
+                  docker compose -f deploy/compose.prod.yaml --env-file /opt/wedding/.env \
+                    up -d --pull always
+              sudo -n docker image prune -af --filter 'until=168h'
             "
 
       - name: Smoke test
