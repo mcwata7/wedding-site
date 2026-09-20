@@ -64,7 +64,13 @@ deploy-backend: check-env ## Build+push the API image to Artifact Registry, then
 			API_IMAGE='$(IMAGE):$(SHA)' docker compose -f deploy/compose.prod.yaml --env-file /opt/wedding/.env up -d --pull always; \
 			docker image prune -af --filter 'until=168h' \
 		"
-	curl -fsS "https://$(API_HOSTNAME)/actuator/health" | grep -q '"status":"UP"' && echo "backend: healthy"
+	@for i in $$(seq 1 18); do \
+		if curl -fsS "https://$(API_HOSTNAME)/actuator/health" | grep -q '"status":"UP"'; then \
+			echo "backend: healthy"; exit 0; \
+		fi; \
+		echo "Not healthy yet, retrying in 10s... ($$i/18)"; sleep 10; \
+	done; \
+	echo "backend did not become healthy within 3 minutes" >&2; exit 1
 
 build-public: ## Build the guest site (frontend/public)
 	cd frontend/public && VITE_API_BASE_URL=https://$(API_HOSTNAME) npm ci && npm run build

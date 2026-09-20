@@ -148,5 +148,16 @@ jobs:
             "
 
       - name: Smoke test
+        # A cold `docker compose up` on the e2-micro's 1GB RAM can take well over a minute for
+        # Spring Boot to finish starting (observed ~90s), so retry instead of checking once.
         run: |
-          curl -fsS "https://${{ vars.API_HOSTNAME }}/actuator/health" | grep -q '"status":"UP"'
+          for i in $(seq 1 18); do
+            if curl -fsS "https://${{ vars.API_HOSTNAME }}/actuator/health" | grep -q '"status":"UP"'; then
+              echo "API is healthy"
+              exit 0
+            fi
+            echo "Not healthy yet, retrying in 10s... ($i/18)"
+            sleep 10
+          done
+          echo "::error::API did not become healthy within 3 minutes"
+          exit 1

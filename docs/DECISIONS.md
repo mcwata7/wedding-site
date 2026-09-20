@@ -866,3 +866,19 @@ new one.
 too — simpler to set up, but a permanent secret with the same blast
 radius as the code inside `google-github-actions/auth`'s error message was
 warning against.
+**Follow-on VM fixups (same rollout):** the deployer SA logs into
+`wedding-vm` over OS Login as its own generated user, not the human
+account that first set up `/opt/wedding` by hand, which surfaced two more
+gaps once auth itself worked: (1) git refused to operate on a
+directory it doesn't own ("dubious ownership") until
+`git config --system --add safe.directory /opt/wedding` was set on the VM
+(system-wide, so it also covers root); (2) `git fetch`/`docker compose`
+in `deploy.yml` now run under `sudo -n` (using the passwordless sudo
+`roles/compute.osAdminLogin` already grants) since the generated user
+still has no actual filesystem permissions there — which in turn meant
+Docker's Artifact Registry credential helper had to be configured for
+`root` too (`sudo gcloud auth configure-docker us-west1-docker.pkg.dev`),
+since it had only ever been set up in the human user's `~/.docker/config.json`.
+The Smoke test step also grew a retry loop (up to 3 minutes): a cold
+`docker compose up` on the e2-micro's 1GB RAM takes Spring Boot around 90
+seconds to finish starting, well past a single immediate health check.
