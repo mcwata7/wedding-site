@@ -81,6 +81,34 @@ export function useOverflowFade<T extends HTMLElement>(itemCount: number) {
   return { ref, fadeLeft: fade.left, fadeRight: fade.right }
 }
 
+/** Reports once whether an element has scrolled into view, for scroll-triggered reveal
+ * animations (SectionOrnament). Latches true and disconnects -- an ornament that already played
+ * its entrance stays put on scroll-up rather than replaying, which reads as a glitch. Honors
+ * reduced-motion by skipping the observer and reporting "in view" immediately, so the caller's
+ * CSS transition (whose end state is identical) simply never has anything to animate from. */
+export function useInView<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [inView, setInView] = useState(prefersReducedMotion())
+
+  useEffect(() => {
+    if (inView) return
+    const el = ref.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(entries => {
+      if (entries.some(e => e.isIntersecting)) {
+        setInView(true)
+        observer.disconnect()
+      }
+    }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' })
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [inView])
+
+  return { ref, inView }
+}
+
 /** Tracks which section id is currently in view, for highlighting the matching nav item in
  * single-page mode (NavLink's own isActive never fires for an anchor). Deliberately does not
  * write the active id back into the URL hash -- that would spam browser history on every scroll

@@ -1,5 +1,5 @@
 import { createContext, useContext, useCallback, useEffect, useState, type ReactNode } from 'react'
-import { scrollToSection } from '../lib/scroll'
+import { scrollToSection, useInView } from '../lib/scroll'
 
 // --- Toast ---
 interface Toast {
@@ -128,6 +128,42 @@ export function PageBanner({ src }: { src?: string }) {
   return (
     <div className="-mx-4 sm:mx-0 sm:rounded-lg overflow-hidden mb-8">
       <img src={src} alt="" className="w-full h-56 sm:h-72 object-cover" />
+    </div>
+  )
+}
+
+// Cycled by index in SectionOrnament -- one of these per section divider in single-page mode.
+const ORNAMENT_ASSETS = ['/branding/bird.svg', '/branding/lion-statue.svg', '/branding/temple-2.svg', '/branding/temples.svg']
+const ORNAMENT_DIRECTIONS = ['bottom', 'left', 'right'] as const
+
+const ORNAMENT_HIDDEN_CLASS: Record<(typeof ORNAMENT_DIRECTIONS)[number], string> = {
+  bottom: 'opacity-0 translate-y-8',
+  left: 'opacity-0 -translate-x-12',
+  right: 'opacity-0 translate-x-12',
+}
+
+/** Decorative branding illustration shown at a single-page section divider (see OnePage). Slides
+ * in from the bottom/left/right (cycled by `index`, along with which of the four branding assets
+ * to show) the first time it scrolls into view -- see useInView for the reduced-motion and
+ * play-once behavior. Purely ornamental, so it's aria-hidden with an empty alt rather than
+ * described to screen readers. `overflow-hidden` on the wrapper keeps the off-screen translated
+ * starting position from introducing a horizontal scrollbar on narrow screens. */
+export function SectionOrnament({ index }: { index: number }) {
+  const { ref, inView } = useInView<HTMLDivElement>()
+  const src = ORNAMENT_ASSETS[index % ORNAMENT_ASSETS.length]
+  const direction = ORNAMENT_DIRECTIONS[index % ORNAMENT_DIRECTIONS.length]
+
+  return (
+    <div ref={ref} className="flex justify-center overflow-hidden py-4" aria-hidden="true">
+      <img
+        src={src}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        className={`h-20 sm:h-28 w-auto transition-all duration-700 ease-out ${
+          inView ? 'opacity-60 translate-x-0 translate-y-0' : ORNAMENT_HIDDEN_CLASS[direction]
+        }`}
+      />
     </div>
   )
 }
