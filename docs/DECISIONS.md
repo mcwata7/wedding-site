@@ -837,3 +837,32 @@ than by party — the wrong unit for a shared-answer credential, trivially
 sidestepped from a phone on cellular, and it would punish whole households
 behind one NAT. (d) A CAPTCHA — a third-party dependency and a new failure
 mode on a site whose guests skew older and non-technical.
+
+## Workload Identity Federation for the Deploy workflow's GCP auth
+
+**Context:** `.github/workflows/deploy.yml` needs to push images to
+Artifact Registry and SSH into `wedding-vm`. The GCP migration
+(see the hosting entry above) left this workflow referencing
+`GCP_WORKLOAD_IDENTITY_PROVIDER`/`GCP_SERVICE_ACCOUNT` secrets that were
+never actually provisioned, so every run since failed at the
+`google-github-actions/auth` step with no valid credential of either kind.
+**Decision:** Workload Identity Federation (WIF) rather than a service
+account JSON key: GitHub's OIDC token is exchanged for short-lived GCP
+credentials at run time, scoped to a `github-deployer` service account,
+with the WIF provider's attribute condition pinned to
+`mcwata7/wedding-site` so no other repo can impersonate it. Provisioning
+(pool, provider, service account, IAM grants, and the resulting repo
+Variables/Secrets) is scripted in `scripts/setup-deploy-auth.sh` rather
+than done by hand through the console, so it's reviewable and re-runnable.
+**Consequences:** No long-lived GCP credential sits in GitHub Secrets for
+the VM/Artifact Registry path — a leaked secret there is only a
+short-lived token, not a standing key. The one exception is
+`FIREBASE_SERVICE_ACCOUNT_JSON`: `FirebaseExtended/action-hosting-deploy`
+has no WIF support yet, so that single key remains, deliberately created
+by hand (the setup script prints the command rather than running it) and
+scoped to the existing `firebase-adminsdk` service account rather than a
+new one.
+**Rejected:** A `credentials_json` service-account key for the GCP steps
+too — simpler to set up, but a permanent secret with the same blast
+radius as the code inside `google-github-actions/auth`'s error message was
+warning against.

@@ -11,8 +11,6 @@ name: Deploy
 #     GCP_ZONE                - e.g. us-west1-b
 #     GCP_VM_NAME             - e.g. wedding-vm
 #     API_HOSTNAME             - e.g. api.34-1-2-3.sslip.io (derived from the VM's static IP)
-#     PUBLIC_SITE_URL          - the guest site's Firebase URL, e.g. https://<id>.web.app
-#     WEDDING_CORS_ALLOWED_ORIGINS - comma-separated guest+planner .web.app/.firebaseapp.com origins
 #     FIREBASE_PROJECT_ID      - the Firebase project id (often same as GCP_PROJECT_ID)
 #   Secrets:
 #     GCP_WORKLOAD_IDENTITY_PROVIDER - Workload Identity Federation provider resource name
@@ -20,7 +18,13 @@ name: Deploy
 #     FIREBASE_SERVICE_ACCOUNT_JSON   - a Firebase service account key JSON (used by the hosting
 #                                       deploy action; Workload Identity isn't supported there yet)
 #
-# See the migration plan / SYSTEM_DESIGN.md §10 for how to create these.
+# (PUBLIC_SITE_URL and WEDDING_CORS_ALLOWED_ORIGINS are backend settings read from the VM's own
+# /opt/wedding/.env, not from this workflow -- they don't belong in repo Variables.)
+#
+# Run scripts/setup-deploy-auth.sh to provision the WIF pool/provider, the deployer service
+# account and its IAM grants, and the Variables/Secrets above (all but the one Firebase key,
+# which it prints instructions for instead of creating). See SYSTEM_DESIGN.md §10 and
+# docs/DECISIONS.md for why WIF was chosen over a service-account key.
 
 on:
   push:
