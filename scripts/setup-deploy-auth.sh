@@ -56,6 +56,14 @@ else
     --display-name "GitHub Actions deployer"
 fi
 
+echo "  waiting for the service account to propagate before granting roles..."
+for i in $(seq 1 10); do
+  if gcloud iam service-accounts describe "${DEPLOYER_SA_EMAIL}" --project "${GCP_PROJECT_ID}" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 3
+done
+
 echo "== c. Granting project IAM roles to the deployer SA =="
 for role in \
   roles/artifactregistry.writer \
