@@ -22,6 +22,20 @@ shared record between them:
   `./scripts/gen-context-map.sh` (a `Stop` hook already checks this
   automatically at the end of each turn — see `/sync-context`).
 
+## Deployment
+
+Production deploys go through `.github/workflows/deploy.yml` (push to
+`main`, or `gh workflow run deploy.yml`) — that is the deploy path, not a
+one-off script run from a laptop. The Makefile's `make deploy*` targets
+are a manual fallback only, for when CI itself is unavailable.
+
+Any one-time or manual step that has to run directly from a human's
+machine (provisioning cloud resources, rotating a credential, fixing VM
+state, etc.) belongs in a checked-in shell script under `scripts/`, not
+a command run ad hoc and discarded — e.g. `scripts/setup-deploy-auth.sh`.
+Write it idempotent (safe to re-run) and let the person review it before
+running, the same way that script was introduced.
+
 ## Build & Run
 
 ```bash
