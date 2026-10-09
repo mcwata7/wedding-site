@@ -1,8 +1,9 @@
 # Generated code map
 
-Regenerate with `scripts/gen-context-map.sh`. Do not hand-edit — a Stop hook
-(`scripts/check-context-fresh.sh`) diffs this file against a fresh run and
-flags drift. For the *why* behind these, see `SYSTEM_DESIGN.md` and
+Shared by Claude Code and Codex. Regenerate with `scripts/gen-context-map.sh`.
+Do not hand-edit. `scripts/check-context-fresh.sh` flags drift; Claude runs
+it via its Stop hook, while Codex runs it explicitly per `AGENTS.md`.
+For the *why* behind these, see `SYSTEM_DESIGN.md` and
 `docs/DECISIONS.md`; this file is only the *what*, derived from code.
 
 ## Backend endpoints
@@ -56,8 +57,8 @@ InternalDataController.java | Get("/site/things-to-do-items") List<Map<String,Ob
 InternalDataController.java | Get("/site/travel-flights") List<Map<String,Object>> travelFlights()
 InternalDataController.java | Get("/site/travel-hotels") List<Map<String,Object>> travelHotels()
 InternalDataController.java | Get("/venues") List<Map<String,Object>> venues()
-InternalDataController.java | Get("/venues/{id}") Map<String,Object> venue(@PathVariable UUID id)
 InternalDataController.java | Get("/venues/rooms") List<Map<String,Object>> allVenueRooms()
+InternalDataController.java | Get("/venues/{id}") Map<String,Object> venue(@PathVariable UUID id)
 InternalDataController.java | Patch("/resources/{resource}/{id}") Map<String,Object> update(@AuthenticationPrincipal Principal actor,@PathVariable String resour
 InternalDataController.java | Patch("/site/settings") Map<String,Object> updateSiteSettings(@AuthenticationPrincipal Principal actor,@RequestBody Map<String,Obj
 InternalDataController.java | Post("/accommodations/change-requests/{id}/{action}") Map<String,Object> resolve(@AuthenticationPrincipal Principal actor,@PathVar
@@ -116,8 +117,8 @@ Latest migration: `V24__guest_login_throttle.sql`
 ## Frontend apps
 
 ### frontend/internal
-- frontend/internal/src/pages/accommodations/AccommodationsPage.tsx
 - frontend/internal/src/pages/DashboardPage.tsx
+- frontend/internal/src/pages/accommodations/AccommodationsPage.tsx
 - frontend/internal/src/pages/events/EventsPage.tsx
 - frontend/internal/src/pages/invitations/CardDesignSection.tsx
 - frontend/internal/src/pages/invitations/InvitationsPage.tsx
@@ -141,6 +142,7 @@ Latest migration: `V24__guest_login_throttle.sql`
 ## File inventory
 
 ### Backend (`backend/src/main/java`)
+- backend/src/main/java/com/wedding/service/WeddingServiceApplication.java
 - backend/src/main/java/com/wedding/service/api/ApiErrorHandler.java
 - backend/src/main/java/com/wedding/service/api/ApiException.java
 - backend/src/main/java/com/wedding/service/api/AuthController.java
@@ -166,25 +168,24 @@ Latest migration: `V24__guest_login_throttle.sql`
 - backend/src/main/java/com/wedding/service/service/MediaSeedService.java
 - backend/src/main/java/com/wedding/service/service/MediaService.java
 - backend/src/main/java/com/wedding/service/service/SlackNotifier.java
-- backend/src/main/java/com/wedding/service/WeddingServiceApplication.java
 
 ### frontend/internal/src
+- frontend/internal/src/App.tsx
 - frontend/internal/src/api/client.ts
 - frontend/internal/src/api/hooks.ts
 - frontend/internal/src/api/types.ts
-- frontend/internal/src/App.tsx
 - frontend/internal/src/auth/AuthContext.tsx
 - frontend/internal/src/auth/LoginPage.tsx
 - frontend/internal/src/components/index.tsx
 - frontend/internal/src/index.css
 - frontend/internal/src/lib/format.ts
 - frontend/internal/src/main.tsx
-- frontend/internal/src/pages/accommodations/AccommodationsPage.tsx
 - frontend/internal/src/pages/DashboardPage.tsx
+- frontend/internal/src/pages/accommodations/AccommodationsPage.tsx
 - frontend/internal/src/pages/events/EventsPage.tsx
 - frontend/internal/src/pages/invitations/CardDesignSection.tsx
-- frontend/internal/src/pages/invitations/cardLayout.ts
 - frontend/internal/src/pages/invitations/InvitationsPage.tsx
+- frontend/internal/src/pages/invitations/cardLayout.ts
 - frontend/internal/src/pages/parties/PartiesPage.tsx
 - frontend/internal/src/pages/parties/PartyDetailPage.tsx
 - frontend/internal/src/pages/reports/ReportsPage.tsx
@@ -195,10 +196,10 @@ Latest migration: `V24__guest_login_throttle.sql`
 - frontend/internal/src/vite-env.d.ts
 
 ### frontend/public/src
+- frontend/public/src/App.tsx
 - frontend/public/src/api/client.ts
 - frontend/public/src/api/hooks.ts
 - frontend/public/src/api/types.ts
-- frontend/public/src/App.tsx
 - frontend/public/src/auth/GuestAuthContext.tsx
 - frontend/public/src/auth/UnlockPage.tsx
 - frontend/public/src/components/index.tsx

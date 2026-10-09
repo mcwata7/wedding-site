@@ -8,6 +8,8 @@
 #
 # Usage: scripts/gen-context-map.sh [output-path]
 set -euo pipefail
+# Keep ordering identical across developer machines and cloud environments.
+export LC_ALL=C
 cd "$(dirname "$0")/.."
 
 OUT="${1:-.claude/context/MAP.md}"
@@ -19,9 +21,10 @@ MIGRATIONS=backend/src/main/resources/db/migration
 {
   echo "# Generated code map"
   echo
-  echo "Regenerate with \`scripts/gen-context-map.sh\`. Do not hand-edit — a Stop hook"
-  echo "(\`scripts/check-context-fresh.sh\`) diffs this file against a fresh run and"
-  echo "flags drift. For the *why* behind these, see \`SYSTEM_DESIGN.md\` and"
+  echo "Shared by Claude Code and Codex. Regenerate with \`scripts/gen-context-map.sh\`."
+  echo "Do not hand-edit. \`scripts/check-context-fresh.sh\` flags drift; Claude runs"
+  echo "it via its Stop hook, while Codex runs it explicitly per \`AGENTS.md\`."
+  echo "For the *why* behind these, see \`SYSTEM_DESIGN.md\` and"
   echo "\`docs/DECISIONS.md\`; this file is only the *what*, derived from code."
   echo
 
