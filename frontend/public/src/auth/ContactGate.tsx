@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiRequestError } from '../api/client'
 import { useGuestAuth } from './GuestAuthContext'
 
-interface Contact { email?: string; phone?: string; mailingAddress?: string; complete: boolean }
+export interface Contact { email?: string; phone?: string; mailingAddress?: string; complete: boolean }
 
 /** Check once per authenticated session. Skipping is temporary, not profile completion. */
 export function ContactGate({ children }: { children: React.ReactNode }) {
@@ -24,32 +24,39 @@ export function ContactGate({ children }: { children: React.ReactNode }) {
   return <ContactForm contact={query.data} onDone={dismissContact} />
 }
 
-function ContactForm({ contact, onDone }: { contact: Contact; onDone: () => void }) {
+export function ContactForm({ contact, onDone, editing = false }: { contact: Contact; onDone?: () => void; editing?: boolean }) {
+  const queryClient = useQueryClient()
+  const [saved, setSaved] = useState(false)
   const [email, setEmail] = useState(contact.email ?? '')
   const [phone, setPhone] = useState(contact.phone ?? '')
   const [mailingAddress, setAddress] = useState(contact.mailingAddress ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const save = async (e: React.FormEvent) => {
-    e.preventDefault(); setSaving(true); setError('')
+    e.preventDefault(); setSaving(true); setError(''); setSaved(false)
     try {
-      await api.patch('/api/v1/guest/contact', { email: email.trim() || null, phone: phone.trim() || null, mailingAddress: mailingAddress.trim() || null })
-      onDone()
+      const updated = await api.patch<Contact>('/api/v1/guest/contact', { email: email.trim() || null, phone: phone.trim() || null, mailingAddress: mailingAddress.trim() || null })
+      queryClient.setQueryData(['guest-contact'], updated)
+      setEmail(updated.email ?? ''); setPhone(updated.phone ?? ''); setAddress(updated.mailingAddress ?? '')
+      setSaved(true)
+      onDone?.()
     } catch (err) { setError(err instanceof ApiRequestError ? err.message : 'Unable to save. Please try again.') }
     finally { setSaving(false) }
   }
   const inputClass = 'block w-full rounded-md border border-gray-300 px-3 py-2 text-ink'
   return (
-    <div className="min-h-screen temple-backdrop flex items-center justify-center p-4">
+    <div className={editing ? "flex justify-center" : "min-h-screen temple-backdrop flex items-center justify-center p-4"}>
       <form onSubmit={save} className="w-full max-w-md bg-paper rounded-lg p-8 space-y-4">
         <h1 className="font-display text-2xl">Your contact information</h1>
         <p className="text-sm">Help us keep in touch. Your mailing address is shared with your invitation party so we can send your invitation.</p>
+        {editing && <p className="text-sm text-ink/70">Leave a field blank to keep its saved value.</p>}
+        {saved && <p role="status" className="text-green-800">Contact information saved.</p>}
         {error && <p role="alert" className="text-red-700">{error}</p>}
         <label className="block">Email<input className={inputClass} type="email" autoComplete="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>
         <label className="block">Phone number<input className={inputClass} type="tel" autoComplete="tel" maxLength={50} value={phone} onChange={e => setPhone(e.target.value)} /></label>
         <label className="block">Party mailing address<textarea className={inputClass} autoComplete="street-address" rows={4} maxLength={2000} placeholder="Include city, postal code and country" value={mailingAddress} onChange={e => setAddress(e.target.value)} /></label>
-        <button disabled={saving} className="w-full bg-accent text-white rounded-md py-2 disabled:opacity-50">{saving ? 'Saving…' : 'Save and continue'}</button>
-        <button type="button" disabled={saving} className="w-full underline" onClick={onDone}>Skip for now</button>
+        <button disabled={saving} className="w-full bg-accent text-white rounded-md py-2 disabled:opacity-50">{saving ? 'Saving…' : editing ? 'Save changes' : 'Save and continue'}</button>
+        {!editing && <button type="button" disabled={saving} className="w-full underline" onClick={onDone}>Skip for now</button>}
       </form>
     </div>
   )

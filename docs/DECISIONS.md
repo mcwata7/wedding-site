@@ -18,6 +18,21 @@ Format:
 ---
 
 
+## 2026-10-09 — Reuse contact collection for authenticated editing
+**Context:** Guests need to update contact details after completing or skipping
+the initial collection step.
+**Decision:** A fixed “Contact info” header link opens `/contact-info` in both
+site layouts. Reuse the collection form with an edit presentation, existing
+profile endpoint, and query cache; load fresh values on entry, preserve drafts
+while editing, and show a save confirmation. Blank inputs retain existing
+values under the current endpoint contract.
+**Rejected:** A second form with duplicate field/validation logic, a single-page
+anchor that fails in the other layout, and tying this account action to a
+planner-managed content page.
+
+---
+
+
 ## 2026-10-09 — Optional guest contact collection with party mailing address
 **Context:** Collect email, phone, and an invitation address after guest login
 without blocking access or asking for already-complete details.

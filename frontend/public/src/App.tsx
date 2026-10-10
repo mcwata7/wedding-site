@@ -2,6 +2,7 @@ import { Routes, Route, NavLink, Link, Navigate, useLocation } from 'react-route
 import { useGuestAuth } from './auth/GuestAuthContext'
 import { ContactGate } from './auth/ContactGate'
 import { UnlockPage } from './auth/UnlockPage'
+import { ContactInfoPage } from './pages/ContactInfoPage'
 import { HomePage } from './pages/HomePage'
 import { SchedulePage } from './pages/SchedulePage'
 import { TravelPage } from './pages/TravelPage'
@@ -30,7 +31,7 @@ const NAV_ITEM_CLASS = (active: boolean, sizeClass: string, hasCustomColor: bool
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useGuestAuth()
   const location = useLocation()
-  return isAuthenticated ? <ContactGate>{children}</ContactGate> : <Navigate to="/unlock" replace state={{ from: location.pathname + location.search + location.hash }} />
+  return isAuthenticated ? (location.pathname === '/contact-info' ? <>{children}</> : <ContactGate>{children}</ContactGate>) : <Navigate to="/unlock" replace state={{ from: location.pathname + location.search + location.hash }} />
 }
 
 /** A single nav item. In multi-page mode (or for a routed slug like rsvp, in either mode) it's
@@ -75,7 +76,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const pages = data?.pages ?? []
   const sectionSlugs = useSectionPages().map(p => p.slug)
   const activeSection = useActiveSection(layout === 'SINGLE_PAGE' ? sectionSlugs : [])
-  const { ref: navRef, fadeLeft, fadeRight } = useOverflowFade<HTMLElement>(pages.length)
+  const { ref: navRef, fadeLeft, fadeRight } = useOverflowFade<HTMLElement>(pages.length + 1)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -93,6 +94,13 @@ function Layout({ children }: { children: React.ReactNode }) {
           {pages.map(p => (
             <NavItem key={p.slug} page={p} layout={layout} activeSection={activeSection} theme={theme} />
           ))}
+          <NavLink
+            to="/contact-info"
+            className={({ isActive }) => NAV_ITEM_CLASS(isActive, theme.sizeClass, theme.color !== undefined)}
+            style={({ isActive }) => ({ color: isActive ? theme.color : theme.inactiveColor })}
+          >
+            Contact info
+          </NavLink>
         </nav>
       </header>
       <main className="flex-1">
@@ -131,12 +139,14 @@ export default function App() {
             <Layout>
               {layout === 'SINGLE_PAGE' ? (
                 <Routes>
+                  <Route path="contact-info" element={<ContactInfoPage />} />
                   <Route index element={<OnePage />} />
                   <Route path="rsvp" element={<ContentPage slug="rsvp" />} />
                   <Route path="*" element={<SectionRedirect />} />
                 </Routes>
               ) : (
                 <Routes>
+                  <Route path="contact-info" element={<ContactInfoPage />} />
                   <Route index element={<HomePage />} />
                   <Route path="schedule" element={<SchedulePage />} />
                   <Route path="travel" element={<TravelPage />} />

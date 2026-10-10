@@ -134,7 +134,14 @@ context state. It survives navigation and reloads but resets on fresh login
 or logout; it is not a database completion flag. Authentication changes clear
 React Query's cache to avoid reusing another guest's profile. Requested URL
 paths, queries, and section hashes survive the authentication redirect and
-contact gate. No public contact-edit navigation is added in this release.
+contact gate. An always-visible authenticated header link, “Contact info,” opens
+`/contact-info` in both site layouts. This route reuses `ContactForm` in edit
+mode inside the site layout, with a “Save changes” button and save confirmation.
+It remains accessible after skipping collection and for already-complete
+profiles; direct entry bypasses the initial contact gate. Current values are
+loaded on entry, successful saves update the contact-query cache, and blank
+fields retain saved values. Focus/reconnect refetches are disabled while editing
+to preserve unsaved input. Legacy sessions offer a fresh login before editing.
 
 ## 6. Application Architecture
 

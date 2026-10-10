@@ -135,6 +135,7 @@ Latest migration: `V25__party_mailing_address.sql`
 - frontend/internal/src/pages/venues/VenueRoomsManager.tsx
 
 ### frontend/public
+- frontend/public/src/pages/ContactInfoPage.tsx
 - frontend/public/src/pages/ContentPage.tsx
 - frontend/public/src/pages/FaqPage.tsx
 - frontend/public/src/pages/HomePage.tsx
@@ -214,6 +215,7 @@ Latest migration: `V25__party_mailing_address.sql`
 - frontend/public/src/lib/scroll.ts
 - frontend/public/src/lib/theme.ts
 - frontend/public/src/main.tsx
+- frontend/public/src/pages/ContactInfoPage.tsx
 - frontend/public/src/pages/ContentPage.tsx
 - frontend/public/src/pages/FaqPage.tsx
 - frontend/public/src/pages/HomePage.tsx

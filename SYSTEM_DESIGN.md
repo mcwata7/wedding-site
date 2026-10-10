@@ -114,8 +114,8 @@ guests for sending invitations. Existing values prefill the form, and guests
 with all three values present skip it automatically. Save may be partial;
 blank inputs preserve existing values. “Skip for now” and successful saves
 dismiss the form for the current tab/session, including reloads. Missing details
-can be requested on a later login or a new tab. A public contact-edit page is
-deferred. Planners can edit party mailing addresses in the internal tool.
+can be requested on a later login or a new tab. An authenticated “Contact info” header link opens the same
+form at `/contact-info` for later edits in either layout. Planners can edit party mailing addresses in the internal tool.
 
 ## 6. Core Data Model
 
