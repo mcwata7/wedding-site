@@ -15,6 +15,12 @@ class JwtServiceTests {
     Principal principal = jwt.parse(jwt.create(user, "PLANNER", null, 10));
     assertEquals(user, principal.id()); assertTrue(principal.planner()); assertNull(principal.partyId());
   }
+  @Test void roundTripsIndividualGuestAndLegacyPartyTokens() {
+    UUID party=UUID.randomUUID(), guest=UUID.randomUUID();
+    Principal p=jwt.parse(jwt.create(party,"GUEST",party,guest,10));
+    assertEquals(party,p.partyId()); assertEquals(guest,p.guestId());
+    assertNull(jwt.parse(jwt.create(party,"GUEST",party,10)).guestId());
+  }
   @Test void rejectsModifiedToken() {
     String token = jwt.create(UUID.randomUUID(), "GUEST", UUID.randomUUID(), 10);
     assertThrows(IllegalArgumentException.class, () -> jwt.parse(token.substring(0, token.length() - 1) + "x"));

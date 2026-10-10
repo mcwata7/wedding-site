@@ -105,6 +105,18 @@ The planner UI covers every functional-requirement action in §5.1–5.6: login 
 - **FAQ:** an optional planner-set banner image and body copy, then a planner-curated list of question/answer pairs.
 - Any additional tab a planner marks visible (currently just RSVP — see §12) renders automatically as an optional banner image + heading + body page with zero additional code, so turning on a new tab is a content edit, not a deployment.
 
+### Guest contact collection
+
+After name-and-answer authentication, guests with missing contact details see an
+optional contact form before the site. Email and phone belong to the individual
+guest; the mailing address belongs to the invitation party and is shared by its
+guests for sending invitations. Existing values prefill the form, and guests
+with all three values present skip it automatically. Save may be partial;
+blank inputs preserve existing values. “Skip for now” and successful saves
+dismiss the form for the current tab/session, including reloads. Missing details
+can be requested on a later login or a new tab. A public contact-edit page is
+deferred. Planners can edit party mailing addresses in the internal tool.
+
 ## 6. Core Data Model
 
 ```text

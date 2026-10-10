@@ -17,6 +17,23 @@ Format:
 
 ---
 
+
+## 2026-10-09 — Optional guest contact collection with party mailing address
+**Context:** Collect email, phone, and an invitation address after guest login
+without blocking access or asking for already-complete details.
+**Decision:** Email/phone stay on the individual guest; `party.mailing_address`
+is shared for sending one invitation to a set of guests. Retain `guestId` in
+new JWTs without changing existing party-scoped access. Ask only when any
+contact value is missing; allow partial saves and skipping. Dismissal lasts
+for the current tab/session and resets on fresh login, not permanently in the
+database. A public contact-edit page is deferred.
+**Rejected:** Party-level email/phone as a substitute for identifying the
+individual; permanent “onboarded” flags that suppress missing details forever;
+reusing the broad guest-update endpoint that can clear omitted dietary/travel
+fields; collecting a separate address for each guest in one invitation party.
+
+---
+
 ## 2026-09-06 — Migrated production hosting from Render to a self-hosted GCP e2-micro VM + Firebase Hosting
 **Context:** Render's Postgres free plan expires 30 days after creation (becomes inaccessible, then
 deleted after a 14-day grace period), forcing a commitment to a paid DB plan (~$6/mo, the cheapest

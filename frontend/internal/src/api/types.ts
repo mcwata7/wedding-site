@@ -17,6 +17,7 @@ export interface Party {
   id: string
   display_name: string
   contact_email: string
+  mailing_address?: string
   contact_phone: string
   archived: boolean
   created_at: string

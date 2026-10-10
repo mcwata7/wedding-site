@@ -57,6 +57,28 @@ Endpoints with real business logic (RSVP status transitions, accommodation capac
 
 **Request-body key convention is not uniform — this has caused real bugs.** Endpoints backed by a typed `record` + `@Valid @RequestBody` (`PartyInput`, `GuestInput` in `InternalController`, and the event-create endpoint's `Map` access via `in.get("venueId")`/`in.get("startsAt")`) bind/read **camelCase** keys, because that's the Java field name Jackson matches against. Endpoints backed by `createSimple` or the generic `PATCH /internal/resources/{resource}/{id}` take a raw `Map<String,Object>` filtered against a `Set<String>` of **snake_case** SQL column names, because those keys are used as literal column/parameter names. Every read endpoint returns raw SQL rows, so responses are snake_case throughout — only *some* writes are camelCase. A client that generalizes "the API is snake_case" from the read endpoints will silently 400 (validation failure on a record) or 500 (missing named SQL parameter) on `POST /internal/parties`, `POST /internal/parties/{id}/guests`, and `POST /internal/events`. When adding a new record-backed endpoint, either accept this split and document it at the call site, or bind camelCase-in/snake_case-out consistently — don't add a third convention.
 
+### Guest contact profile
+
+`GuestContactController` exposes authenticated `GET` and `PATCH
+/api/v1/guest/contact`. New guest JWTs include an optional `guestId` alongside
+`partyId`; name resolution rejects matches to multiple individual guests,
+even within one party. Existing token subjects and party-level authorization
+remain unchanged. Legacy guest tokens remain valid for existing site APIs;
+the contact endpoint responds with `409 GUEST_IDENTITY_REQUIRED` so the UI can
+offer a fresh login or let the visitor skip.
+
+The endpoint checks that the active guest belongs to the authenticated,
+non-archived party. It returns `email`, `phone`, `mailingAddress`, and `complete`
+(all three nonblank). Its transactional patch updates only guest email/phone
+and party mailing address, preserving unrelated guest fields. Null or blank
+inputs preserve values; supplied values are trimmed. Email is validated and
+field lengths are limited to 254/50/2000 characters. The existing unique-email
+constraint is preserved: conflicts return `409 EMAIL_ALREADY_IN_USE` and roll
+back the entire contact update, including the party address. `V25` adds nullable
+`party.mailing_address`. Planner generic party updates include that column
+and retain existing auditing. Contact details are returned only by the
+protected profile endpoint, not by the unauthenticated name lookup.
+
 ## 6. Data Access
 
 `DataService` (`service/DataService.java`) is intentionally ~20 lines:

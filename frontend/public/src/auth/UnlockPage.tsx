@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useGuestAuth } from './GuestAuthContext'
 import { api, ApiRequestError } from '../api/client'
 import type { InviteLookup, GuestSession } from '../api/types'
@@ -10,6 +10,7 @@ import type { InviteLookup, GuestSession } from '../api/types'
 export function UnlockPage() {
   const { login } = useGuestAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [name, setName] = useState('')
   const [invite, setInvite] = useState<InviteLookup | null>(null)
   const [answer, setAnswer] = useState('')
@@ -37,7 +38,8 @@ export function UnlockPage() {
     try {
       const res = await api.post<GuestSession>('/api/v1/guest/sessions', { name, answer })
       login(res.accessToken)
-      navigate('/')
+      const from = location.state?.from
+      navigate(typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && !from.startsWith('/unlock') ? from : '/', { replace: true })
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : 'That answer was incorrect.')
     } finally {

@@ -1,5 +1,6 @@
 import { Routes, Route, NavLink, Link, Navigate, useLocation } from 'react-router-dom'
 import { useGuestAuth } from './auth/GuestAuthContext'
+import { ContactGate } from './auth/ContactGate'
 import { UnlockPage } from './auth/UnlockPage'
 import { HomePage } from './pages/HomePage'
 import { SchedulePage } from './pages/SchedulePage'
@@ -28,7 +29,8 @@ const NAV_ITEM_CLASS = (active: boolean, sizeClass: string, hasCustomColor: bool
 
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useGuestAuth()
-  return isAuthenticated ? <>{children}</> : <Navigate to="/unlock" replace />
+  const location = useLocation()
+  return isAuthenticated ? <ContactGate>{children}</ContactGate> : <Navigate to="/unlock" replace state={{ from: location.pathname + location.search + location.hash }} />
 }
 
 /** A single nav item. In multi-page mode (or for a routed slug like rsvp, in either mode) it's

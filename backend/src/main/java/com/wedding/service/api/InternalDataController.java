@@ -21,7 +21,7 @@ public class InternalDataController {
     Map.entry("site-pages", "site_page"), Map.entry("things-to-do-items", "thing_to_do_item"),
     Map.entry("faq-items", "faq_item"), Map.entry("travel-hotels", "travel_hotel"), Map.entry("travel-flights", "travel_flight"));
   private static final Map<String, Set<String>> COLUMNS = Map.ofEntries(
-    Map.entry("parties", Set.of("display_name","contact_email","contact_phone","verification_question")),
+    Map.entry("parties", Set.of("display_name","contact_email","contact_phone","mailing_address","verification_question")),
     Map.entry("guests", Set.of("first_name","last_name","relationship_group","email","phone","dietary_requirements","accessibility_needs","travel_origin","flight_number","planner_notes","is_additional_guest","wedding_side","attendance_probability","is_wedding_party","passport","is_ktm_resident","is_child","room_assignment_id","invite_round")),
     Map.entry("venues", Set.of("name","address","contact_information","capacity","notes","distance_from_ktm_km","transportation_required","room_block_min","room_block_max","image_id")),
     Map.entry("events", Set.of("name","venue_id","description","starts_at","ends_at","dress_code","capacity","rsvp_deadline","public_visible")),
