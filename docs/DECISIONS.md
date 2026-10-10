@@ -18,6 +18,19 @@ Format:
 ---
 
 
+## 2026-10-09 — Remove redundant party email and phone
+**Context:** Email and phone identify individual guests; an invitation party
+needs only a shared mailing address.
+**Decision:** Remove party email/phone from planner forms, API payloads and
+allowlists, and drop the legacy columns in `V26`. Keep guest email/phone and
+party mailing address unchanged. Historical migrations and audit records stay
+intact; legacy party values are not assigned to an arbitrary guest.
+**Rejected:** Retaining two competing sources of contact information or
+copying household contact values to guests without knowing their owner.
+
+---
+
+
 ## 2026-10-09 — Reuse contact collection for authenticated editing
 **Context:** Guests need to update contact details after completing or skipping
 the initial collection step.

@@ -75,7 +75,9 @@ inputs preserve values; supplied values are trimmed. Email is validated and
 field lengths are limited to 254/50/2000 characters. The existing unique-email
 constraint is preserved: conflicts return `409 EMAIL_ALREADY_IN_USE` and roll
 back the entire contact update, including the party address. `V25` adds nullable
-`party.mailing_address`. Planner generic party updates include that column
+`party.mailing_address`. `V26` removes the legacy party `contact_email` and
+`contact_phone` columns; email and phone remain exclusively on guests. Party
+creation and reads no longer accept or return those fields. Planner generic party updates include the address column
 and retain existing auditing. Contact details are returned only by the
 protected profile endpoint, not by the unauthenticated name lookup.
 

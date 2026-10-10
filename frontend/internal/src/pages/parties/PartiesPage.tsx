@@ -23,7 +23,7 @@ export function PartiesPage() {
 
   // Create party form state
   const [form, setForm] = useState({
-    displayName: '', contactEmail: '', contactPhone: '',
+    displayName: '',
     verificationQuestion: '', verificationAnswer: '',
   })
 
@@ -34,14 +34,12 @@ export function PartiesPage() {
     try {
       await createParty.mutateAsync({
         displayName: form.displayName,
-        contactEmail: form.contactEmail,
-        contactPhone: form.contactPhone,
         verificationQuestion: form.verificationQuestion,
         verificationAnswer: form.verificationAnswer,
       })
       toast.success('Party created.')
       setShowCreate(false)
-      setForm({ displayName: '', contactEmail: '', contactPhone: '', verificationQuestion: '', verificationAnswer: '' })
+      setForm({ displayName: '', verificationQuestion: '', verificationAnswer: '' })
     } catch (err) {
       toast.error(err instanceof ApiRequestError ? err.message : 'Failed to create party.')
     }
@@ -62,8 +60,6 @@ export function PartiesPage() {
 
   const columns = [
     { key: 'display_name', header: 'Party Name' },
-    { key: 'contact_email', header: 'Email', render: (r: Party) => r.contact_email || '—' },
-    { key: 'contact_phone', header: 'Phone', render: (r: Party) => r.contact_phone || '—' },
     {
       key: 'archived', header: 'Status',
       render: (r: Party) => r.archived
@@ -108,12 +104,6 @@ export function PartiesPage() {
         <form onSubmit={handleCreate} className="space-y-3">
           <Field label="Party Display Name" required>
             <Input required value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} placeholder="e.g. Smith Family" />
-          </Field>
-          <Field label="Contact Email">
-            <Input type="email" value={form.contactEmail} onChange={e => setForm(f => ({ ...f, contactEmail: e.target.value }))} />
-          </Field>
-          <Field label="Contact Phone">
-            <Input value={form.contactPhone} onChange={e => setForm(f => ({ ...f, contactPhone: e.target.value }))} />
           </Field>
           <Field label="Verification Question" required>
             <Input required value={form.verificationQuestion} onChange={e => setForm(f => ({ ...f, verificationQuestion: e.target.value }))} placeholder="e.g. What city did the couple meet?" />

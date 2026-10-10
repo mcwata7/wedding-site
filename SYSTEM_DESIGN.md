@@ -53,7 +53,7 @@ Guests must never access another invitation party's contact, travel, RSVP, accom
 - A guest belongs to an invitation **party** (for example, an individual, couple, or household). A party contains one or more named attendees and may include a permitted plus-one.
 - Store guest name, contact details, relationship/group (family/relative/friend/other), dietary requirements, accessibility needs, travel origin and arrival details, and planner-only notes.
 - List-building metadata for segmenting and planning invite rounds: which side of the wedding the guest belongs to (bride/groom), attendance probability (certain/very likely/likely/maybe/unlikely/N-A), wedding-party membership, passport (Nepali/Indian/other, for visa lead time), Kathmandu residency, child status (for catering headcount), room assignment, and invite round.
-- Guests may update their party’s contact information, dietary restrictions, travel plans (including flight number), and information for named additional guests. Planners control all other guest fields and each guest's per-event RSVP.
+- Guests may update their own email and phone, their party’s mailing address, dietary restrictions, travel plans (including flight number), and information for named additional guests. Planners control all other guest fields and each guest's per-event RSVP.
 - An invitation is issued to a party, not a single person. Its lifecycle is: `draft → sent → viewed → responded → closed`. A reminder may be sent while it remains open.
 - Planners can record an RSVP on a guest’s behalf (for phone or in-person responses).
 - Each invitation can be rendered as a printable, two-sided A6 card: a front that's pure planner-uploaded artwork (cover-cropped to the card, nothing else drawn on it) and a back carrying a QR code that resolves to the guest site's `/i/{qrToken}` route, the invite URL as text, and the party's name — each independently positioned, sized, and colored, over its own planner-uploaded background image. The card can be portrait or landscape (one setting, shared by both sides). There is no other planner-authored card text. Planners can download a single party's card or every party's card as one PDF (two pages per card, front then back, alternating — the order a duplex printer needs), and can reprint without invalidating a card already mailed.
@@ -141,7 +141,7 @@ TravelFlight (0 or more, ordered)
 
 Key entities and required relationships:
 
-- **Party:** the invitation and access boundary; owns members, contact preferences, and invitation state.
+- **Party:** the invitation and access boundary; owns members, the shared mailing address, and invitation state. Email and phone belong to individual guests.
 - **Guest:** a named attendee, including personal requirements, optional travel details, list-building metadata (wedding side, attendance probability, wedding-party flag, passport, KTM residency, child flag, invite round), and an optional planning-stage room assignment.
 - **Event:** a scheduled wedding activity with capacity rules; every party attends every event.
 - **Venue room:** a room type offered by a venue's room block (occupancy, room count, Nepali/foreigner nightly rates), optionally identified by a room number when it's a specific bookable room rather than a room-block quoting entry — the same entity backs both venue cost comparison and guest accommodation.

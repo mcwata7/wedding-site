@@ -106,7 +106,9 @@ The one screen `PartyDetailPage`'s QR modal doesn't cover: a party-by-party view
 
 ### Party mailing address
 
-Party Information displays `mailing_address` as multiline text. Edit Party
+Party create/edit forms and the party list do not collect or display email or
+phone; those fields belong exclusively to guests. Party Information displays
+`mailing_address` as multiline text. Edit Party
 includes a Mailing Address textarea using the existing generic party-update
 mutation. This is a household/invitation address, separate from each guest's
 email and phone, and is shared with the guest contact-collection prompt.

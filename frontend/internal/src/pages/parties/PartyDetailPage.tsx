@@ -57,7 +57,7 @@ export function PartyDetailPage() {
   const [editRsvp, setEditRsvp] = useState<{ rsvp: Rsvp; guestName: string; eventName: string } | null>(null)
   const [rsvpForm, setRsvpForm] = useState({ status: '', note: '' })
 
-  const [partyForm, setPartyForm] = useState({ display_name: '', contact_email: '', contact_phone: '', mailing_address: '', verification_question: '' })
+  const [partyForm, setPartyForm] = useState({ display_name: '', mailing_address: '', verification_question: '' })
   const [guestForm, setGuestForm] = useState<Record<string, string>>({})
   const [deliveryForm, setDeliveryForm] = useState({ kind: 'DELIVERY', note: '' })
 
@@ -72,8 +72,6 @@ export function PartyDetailPage() {
   const openEditParty = () => {
     setPartyForm({
       display_name: party.display_name,
-      contact_email: party.contact_email ?? '',
-      contact_phone: party.contact_phone ?? '',
       mailing_address: party.mailing_address ?? '',
       verification_question: party.verification_question ?? '',
     })
@@ -332,8 +330,6 @@ export function PartyDetailPage() {
       {/* Party info */}
       <Section title="Party Information">
         <dl className="grid grid-cols-2 gap-4 text-sm">
-          <div><dt className="font-medium text-gray-500">Email</dt><dd>{party.contact_email || '—'}</dd></div>
-          <div><dt className="font-medium text-gray-500">Phone</dt><dd>{party.contact_phone || '—'}</dd></div>
           <div className="col-span-2"><dt className="font-medium text-gray-500">Mailing Address</dt><dd className="whitespace-pre-line">{party.mailing_address || '—'}</dd></div>
           <div><dt className="font-medium text-gray-500">Verification Question</dt><dd>{party.verification_question || '—'}</dd></div>
         </dl>
@@ -406,7 +402,7 @@ export function PartyDetailPage() {
       {/* Edit Party Modal */}
       <Modal open={editParty} onClose={() => setEditParty(false)} title="Edit Party">
         <form onSubmit={saveParty} className="space-y-3">
-          {(['display_name', 'contact_email', 'contact_phone', 'verification_question'] as const).map(k => (
+          {(['display_name', 'verification_question'] as const).map(k => (
             <Field key={k} label={k.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}>
               <Input value={partyForm[k]} onChange={e => setPartyForm(f => ({ ...f, [k]: e.target.value }))} />
             </Field>
