@@ -11,6 +11,7 @@ import {
   Button, Modal, Field, Input, TextArea, Table, Select,
   LoadingSpinner, PageHeader, useToast, Badge, MediaPicker,
 } from '../../components'
+import { labelColorPreview } from '../../lib/colorContrast'
 import { ApiRequestError, mediaUrl } from '../../api/client'
 import type { ThingToDoItem, FaqItem, TravelHotel, TravelFlight, MediaAsset } from '../../api/types'
 
@@ -42,15 +43,33 @@ const FONT_SIZE_OPTIONS = [
 /** A color field pairing a native swatch with a hex text input (matches CardDesignSection.tsx's
  * QR-color precedent), plus a Reset button -- a native color input has no "empty" state, so
  * without this a planner could never get back to the unthemed default once they'd touched it. */
-function ColorField({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function ColorField({ label, value, onChange, defaultColor = '#000000' }: { label: string; value: string; onChange: (v: string) => void; defaultColor?: string }) {
   return (
     <Field label={label}>
       <div className="flex items-center gap-2">
-        <input type="color" value={value || '#000000'} onChange={e => onChange(e.target.value)} className="h-8 w-8 cursor-pointer rounded border border-gray-300 p-0.5" />
-        <Input value={value} onChange={e => onChange(e.target.value)} placeholder="Default" className="w-28" />
+        <input type="color" aria-label={`${label} swatch`} value={labelColorPreview(value || defaultColor, '', '#ffffff').foreground} onChange={e => onChange(e.target.value)} className="h-8 w-8 cursor-pointer rounded border border-gray-300 p-0.5" />
+        <Input aria-label={label} value={value} onChange={e => onChange(e.target.value)} placeholder="Default" className="w-28" />
         {value && <Button size="sm" variant="ghost" type="button" onClick={() => onChange('')}>Reset</Button>}
       </div>
     </Field>
+  )
+}
+
+function LabelColorField({ label, value, background, fallbackBackground, sample, description, onChange }: {
+  label: string; value: string; background: string; fallbackBackground: string; sample: string; description: string; onChange: (value: string) => void
+}) {
+  const preview = labelColorPreview(value, background, fallbackBackground)
+  return (
+    <div className="mt-3 space-y-2">
+      <ColorField label={label} value={value} onChange={onChange} defaultColor="#7a2331" />
+      <p className="text-xs text-gray-500">{description}</p>
+      <div className="rounded border p-3" style={{ backgroundColor: preview.background }}>
+        <p className="text-xs tracking-[0.2em] uppercase" style={{ color: preview.foreground }}>{sample}</p>
+      </div>
+      <p className="text-xs" role="status">
+        {preview.valid ? `Contrast ${preview.ratio.toFixed(2)}:1 — ${preview.ratio >= 4.5 ? 'meets' : 'below'} the 4.5:1 target for small text.` : 'Enter a valid three- or six-digit hex color.'}
+      </p>
+    </div>
   )
 }
 
@@ -81,6 +100,8 @@ export function SitePage() {
         site_bg_color: settings.site_bg_color ?? '',
         tile_bg_color: settings.tile_bg_color ?? '',
         tile_border_color: settings.tile_border_color ?? '',
+        section_label_color: settings.section_label_color ?? '',
+        date_label_color: settings.date_label_color ?? '',
       })
     }
   }, [settings])
@@ -562,6 +583,7 @@ export function SitePage() {
                 <ColorField label="Font Color" value={form.site_font_color ?? ''} onChange={v => setForm(f => ({ ...f, site_font_color: v }))} />
                 <ColorField label="Background Color" value={form.site_bg_color ?? ''} onChange={v => setForm(f => ({ ...f, site_bg_color: v }))} />
               </div>
+              <LabelColorField label="Section Label Color" value={form.section_label_color ?? ''} background={form.site_bg_color ?? ''} fallbackBackground="#f6ecdf" sample="Join Us" description="Small labels above page headings, including Join Us, Good to Know, Plan Your Trip, and Explore." onChange={v => setForm(f => ({ ...f, section_label_color: v }))} />
             </div>
 
             <div className="border-t pt-4">
@@ -571,6 +593,7 @@ export function SitePage() {
                 <ColorField label="Background Color" value={form.tile_bg_color ?? ''} onChange={v => setForm(f => ({ ...f, tile_bg_color: v }))} />
                 <ColorField label="Border Color" value={form.tile_border_color ?? ''} onChange={v => setForm(f => ({ ...f, tile_border_color: v }))} />
               </div>
+              <LabelColorField label="Date Label Color" value={form.date_label_color ?? ''} background={form.tile_bg_color ?? ''} fallbackBackground="#ffffff" sample="October 2, 2027" description="Dates above event titles on the Schedule page." onChange={v => setForm(f => ({ ...f, date_label_color: v }))} />
             </div>
 
             <div className="flex justify-end pt-2">

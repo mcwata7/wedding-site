@@ -14,6 +14,8 @@ export default {
         ink: 'rgb(var(--color-ink, 43 21 18) / <alpha-value>)',
         paper: 'rgb(var(--color-paper, 246 236 223) / <alpha-value>)',
         accent: '#7a2331',
+        sectionLabel: 'rgb(var(--color-section-label, 122 35 49) / <alpha-value>)',
+        dateLabel: 'rgb(var(--color-date-label, 122 35 49) / <alpha-value>)',
         maroon: '#4a1220',
         brass: '#a8763e',
         // The "tile" card look shared by Schedule/Travel/Things To Do's cards. tileBorder's

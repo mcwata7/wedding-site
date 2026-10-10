@@ -117,6 +117,13 @@ dismiss the form for the current tab/session, including reloads. Missing details
 can be requested on a later login or a new tab. An authenticated “Contact info” header link opens the same
 form at `/contact-info` for later edits in either layout. Planners can edit party mailing addresses in the internal tool.
 
+### Label color customization
+
+Planners can set section-label text colors (such as Join Us) separately from
+schedule-date text colors. Controls under Site Styling and Tile Styling show
+samples and a 4.5:1 small-text contrast target against the selected background.
+Reset restores the existing accent color. Both site layouts use these values.
+
 ## 6. Core Data Model
 
 ```text

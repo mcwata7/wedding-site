@@ -75,7 +75,7 @@ public class InternalDataController {
     "invitation_front_image_id","invitation_back_image_id","invitation_orientation","invitation_card_layout","site_layout",
     "header_font_family","header_font_color","header_font_size","header_bg_color",
     "site_font_family","site_font_color","site_font_size","site_bg_color",
-    "tile_bg_color","tile_border_color",
+    "tile_bg_color","tile_border_color","section_label_color","date_label_color",
     "home_design_image_id","home_design_only");
   private static final Set<String> DATE_COLUMNS = Set.of("wedding_start_date","wedding_end_date");
   @PatchMapping("/site/settings") Map<String,Object> updateSiteSettings(@AuthenticationPrincipal Principal actor,@RequestBody Map<String,Object> input) {
@@ -110,6 +110,9 @@ public class InternalDataController {
       } else if ("header_font_size".equals(col) || "site_font_size".equals(col)) {
         setters.add(col + "=:" + col);
         val = parseFontSizeOrNull(val);
+      } else if ("section_label_color".equals(col) || "date_label_color".equals(col)) {
+        setters.add(col + "=:" + col);
+        val = parseLabelColorOrNull(val);
       } else if ("header_font_color".equals(col) || "header_bg_color".equals(col) || "site_font_color".equals(col) || "site_bg_color".equals(col)
           || "tile_bg_color".equals(col) || "tile_border_color".equals(col)) {
         setters.add(col + "=:" + col);
@@ -181,6 +184,14 @@ public class InternalDataController {
     String v = value.toString().trim().toUpperCase();
     if (!FONT_SIZES.contains(v)) throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "font size must be SMALL, MEDIUM, or LARGE");
     return v;
+  }
+  /** Label controls accept hex colors; blank resets to the guest app fallback. */
+  static String parseLabelColorOrNull(Object value) {
+    if (value == null || value.toString().isBlank()) return null;
+    String color = value.toString().trim();
+    if (!color.matches("#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?"))
+      throw new ApiException(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "Label colors must use a three- or six-digit hex color.");
+    return (color.startsWith("#") ? color : "#" + color).toLowerCase(java.util.Locale.ROOT);
   }
   /** A CSS color column has no format validation (matches hero_tagline's "plain text" precedent) --
    * but blank must still become NULL, never an empty string, so the guest app's `var(--x, fallback)`

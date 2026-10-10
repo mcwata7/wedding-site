@@ -56,4 +56,16 @@ class InternalDataControllerTests {
     assertTrue(InternalDataController.parseBooleanOrDefault("true", false));
     assertFalse(InternalDataController.parseBooleanOrDefault("false", true));
   }
+  @Test void labelColorsResetAndNormalize() {
+    assertNull(InternalDataController.parseLabelColorOrNull(null));
+    assertNull(InternalDataController.parseLabelColorOrNull("  "));
+    assertEquals("#abc", InternalDataController.parseLabelColorOrNull(" ABC "));
+    assertEquals("#123abc", InternalDataController.parseLabelColorOrNull(" #123ABC "));
+  }
+  @Test void labelColorsRejectInvalidCssAndHex() {
+    for (String value : new String[]{"red", "#12", "#12345", "#12345678", "rgb(0,0,0)", "#xyz"}) {
+      ApiException error=assertThrows(ApiException.class, () -> InternalDataController.parseLabelColorOrNull(value));
+      assertEquals("VALIDATION_ERROR", error.code);
+    }
+  }
 }

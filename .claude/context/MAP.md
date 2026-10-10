@@ -89,7 +89,7 @@ SiteController.java | Get("/travel") Map<String,Object> travel()
 
 ## Database schema (Flyway migrations)
 
-Latest migration: `V26__remove_party_email_and_phone.sql`
+Latest migration: `V27__label_colors.sql`
 
 | Migration | Tables touched |
 |---|---|
@@ -118,6 +118,7 @@ Latest migration: `V26__remove_party_email_and_phone.sql`
 | V24__guest_login_throttle.sql | guest_login_throttle |
 | V25__party_mailing_address.sql | party |
 | V26__remove_party_email_and_phone.sql | party |
+| V27__label_colors.sql | site_settings |
 
 ## Frontend apps
 
@@ -185,6 +186,7 @@ Latest migration: `V26__remove_party_email_and_phone.sql`
 - frontend/internal/src/auth/LoginPage.tsx
 - frontend/internal/src/components/index.tsx
 - frontend/internal/src/index.css
+- frontend/internal/src/lib/colorContrast.ts
 - frontend/internal/src/lib/format.ts
 - frontend/internal/src/main.tsx
 - frontend/internal/src/pages/DashboardPage.tsx

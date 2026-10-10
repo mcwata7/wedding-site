@@ -113,6 +113,16 @@ includes a Mailing Address textarea using the existing generic party-update
 mutation. This is a household/invitation address, separate from each guest's
 email and phone, and is shared with the guest contact-collection prompt.
 
+### Label color controls
+
+Site → General → Site Styling includes Section Label Color; Tile Styling
+includes Date Label Color. Each reuses the color swatch/hex input and Reset,
+plus a sample rendered against the currently selected site/tile background.
+A WCAG relative-luminance contrast ratio indicates whether the small text
+meets the 4.5:1 target. Preview updates before saving; it is advisory and
+lower-contrast colors are permitted. Empty controls reset to the existing
+accent color. New label fields are hex-validated by the API.
+
 ## 6. Application Architecture
 
 - **Routing:** `react-router-dom` v6. `App.tsx` defines a flat route tree: `/login` outside auth, everything else behind `ProtectedRoute` and wrapped in a persistent `Layout` (sidebar nav + content area). Unauthenticated access to any protected route redirects to `/login`.

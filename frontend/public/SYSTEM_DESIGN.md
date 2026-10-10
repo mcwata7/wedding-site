@@ -143,6 +143,16 @@ loaded on entry, successful saves update the contact-query cache, and blank
 fields retain saved values. Focus/reconnect refetches are disabled while editing
 to preserve unsaved input. Legacy sessions offer a fresh login before editing.
 
+### Section and date label colors
+
+`section_label_color` controls all `PageHeading` eyebrow text: Join Us, Good
+to Know, Plan Your Trip, and Explore. `date_label_color` controls schedule-card
+dates. `useSiteTheme` sets/cleans `--color-section-label` and
+`--color-date-label`; Tailwind `sectionLabel`/`dateLabel` use RGB triplets and
+opacity support, falling back to the original `#7a2331`. Both layouts reuse
+the same components. Navigation, buttons, hotel links, and other accent uses
+retain their existing colors.
+
 ## 6. Application Architecture
 
 - **Routing:** `react-router-dom` v6. `/unlock` (and the `/i/*` redirect) is public; everything else sits behind `GuestRoute`, which redirects to `/unlock` when unauthenticated, wrapped in a single `Layout` that renders a centered nav bar built from `GET /api/v1/guest/site/config`'s `pages` list — so the visible tabs (and their order) always match what the planner configured, with no separate nav config to keep in sync. `Layout`'s header shell is identical in both site layouts; only its inner `<Routes>` table and each nav item's target switch on `useSiteLayout()` (`MULTI_PAGE`'s table is exactly what's described in §5.1–§5.7; `SINGLE_PAGE`'s is `index → OnePage`, `rsvp → ContentPage`, `* → SectionRedirect`). `Layout` gates its children behind the site config's own `isLoading` so the correct route table is never chosen from a stale default.

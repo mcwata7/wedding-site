@@ -18,6 +18,19 @@ Format:
 ---
 
 
+## 2026-10-09 — Separate section-label and schedule-date colors
+**Context:** Small accent-colored section labels and event dates can become
+hard to read against planner-selected site and tile backgrounds.
+**Decision:** Two nullable hex settings, section label and date label colors,
+with targeted CSS variables and existing accent defaults. Planner controls
+preview each on its own background and report the 4.5:1 contrast target.
+**Rejected:** Recoloring the global accent (which would change navigation,
+buttons, and links), or one shared label color across two backgrounds that
+may need different choices for readable text.
+
+---
+
+
 ## 2026-10-09 — Remove redundant party email and phone
 **Context:** Email and phone identify individual guests; an invitation party
 needs only a shared mailing address.

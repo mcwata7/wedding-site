@@ -30,7 +30,7 @@ export function SchedulePage() {
         <ol className="max-w-2xl mx-auto space-y-6">
           {events.map(e => (
             <li key={e.id} className="bg-tileBg rounded-lg border border-tileBorder/10 p-6">
-              <p className="text-xs tracking-[0.15em] uppercase text-accent mb-1">
+              <p className="text-xs tracking-[0.15em] uppercase text-dateLabel mb-1">
                 {fmtDate(e.starts_at, settings.display_timezone)}
               </p>
               <h3 className="font-display text-xl text-ink mb-2">{e.name}</h3>

@@ -76,7 +76,7 @@ export function PageHeading({ eyebrow, title }: { eyebrow?: string; title: strin
   const Tag = useContext(HeadingLevelContext)
   return (
     <div className="text-center mb-10">
-      {eyebrow && <p className="text-xs tracking-[0.2em] uppercase text-accent mb-2">{eyebrow}</p>}
+      {eyebrow && <p className="text-xs tracking-[0.2em] uppercase text-sectionLabel mb-2">{eyebrow}</p>}
       <Tag className="font-display text-4xl text-ink">{title}</Tag>
     </div>
   )
