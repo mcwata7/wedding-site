@@ -119,6 +119,23 @@ blanks the page). In `SINGLE_PAGE` layout the design image simply becomes `OnePa
 first section, with Schedule/Travel/FAQ still following below it — this is deliberate:
 it overrides the *Home page's* content, not the whole site's layout.
 
+### Optional contact prompt
+
+`ContactGate` wraps authenticated site content and requests
+`GET /api/v1/guest/contact`. Incomplete profiles show email, phone, and a
+multiline party mailing-address form, prefilled from the server. Fields are
+optional; `PATCH` saves supplied values, while “Skip for now” writes nothing
+to the profile. Errors preserve form input and allow retry. A profile-read
+failure allows retry or skipping; legacy sessions also offer a fresh login.
+A complete profile goes straight to the requested content.
+
+Dismissal is kept in sessionStorage for the current token/tab and in auth
+context state. It survives navigation and reloads but resets on fresh login
+or logout; it is not a database completion flag. Authentication changes clear
+React Query's cache to avoid reusing another guest's profile. Requested URL
+paths, queries, and section hashes survive the authentication redirect and
+contact gate. No public contact-edit navigation is added in this release.
+
 ## 6. Application Architecture
 
 - **Routing:** `react-router-dom` v6. `/unlock` (and the `/i/*` redirect) is public; everything else sits behind `GuestRoute`, which redirects to `/unlock` when unauthenticated, wrapped in a single `Layout` that renders a centered nav bar built from `GET /api/v1/guest/site/config`'s `pages` list — so the visible tabs (and their order) always match what the planner configured, with no separate nav config to keep in sync. `Layout`'s header shell is identical in both site layouts; only its inner `<Routes>` table and each nav item's target switch on `useSiteLayout()` (`MULTI_PAGE`'s table is exactly what's described in §5.1–§5.7; `SINGLE_PAGE`'s is `index → OnePage`, `rsvp → ContentPage`, `* → SectionRedirect`). `Layout` gates its children behind the site config's own `isLoading` so the correct route table is never chosen from a stale default.

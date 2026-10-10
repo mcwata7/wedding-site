@@ -104,6 +104,13 @@ The one screen `PartyDetailPage`'s QR modal doesn't cover: a party-by-party view
 
 `PartyDetailPage` also gained a standalone **Download Card** button next to Issue QR/Record Delivery, for the common case of printing right after issuing a token.
 
+### Party mailing address
+
+Party Information displays `mailing_address` as multiline text. Edit Party
+includes a Mailing Address textarea using the existing generic party-update
+mutation. This is a household/invitation address, separate from each guest's
+email and phone, and is shared with the guest contact-collection prompt.
+
 ## 6. Application Architecture
 
 - **Routing:** `react-router-dom` v6. `App.tsx` defines a flat route tree: `/login` outside auth, everything else behind `ProtectedRoute` and wrapped in a persistent `Layout` (sidebar nav + content area). Unauthenticated access to any protected route redirects to `/login`.

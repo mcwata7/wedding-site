@@ -14,6 +14,9 @@ AuthController.java | @RestController Base("/api/v1")
 AuthController.java | Post("/auth/planner/login") Map<String,Object> login(@Valid @RequestBody Login in)
 AuthController.java | Post("/guest/invitations/lookup") Map<String,Object> lookup(@Valid @RequestBody InviteLookup in)
 AuthController.java | Post("/guest/sessions") Map<String,Object> guest(@Valid @RequestBody GuestSession in)
+GuestContactController.java | Base("/api/v1/guest/contact")
+GuestContactController.java | Get
+GuestContactController.java | Patch @Transactional
 GuestController.java | @RestController Base("/api/v1/guest")
 GuestController.java | Get("/accommodation") List<Map<String,Object>> accommodations(@AuthenticationPrincipal Principal p)
 GuestController.java | Get("/events") List<Map<String,Object>> events(@AuthenticationPrincipal Principal p)
@@ -86,7 +89,7 @@ SiteController.java | Get("/travel") Map<String,Object> travel()
 
 ## Database schema (Flyway migrations)
 
-Latest migration: `V24__guest_login_throttle.sql`
+Latest migration: `V25__party_mailing_address.sql`
 
 | Migration | Tables touched |
 |---|---|
@@ -113,6 +116,7 @@ Latest migration: `V24__guest_login_throttle.sql`
 | V22__site_styling_and_home_design.sql | site_settings |
 | V23__tile_styling.sql | site_settings |
 | V24__guest_login_throttle.sql | guest_login_throttle |
+| V25__party_mailing_address.sql | party |
 
 ## Frontend apps
 
@@ -146,6 +150,7 @@ Latest migration: `V24__guest_login_throttle.sql`
 - backend/src/main/java/com/wedding/service/api/ApiErrorHandler.java
 - backend/src/main/java/com/wedding/service/api/ApiException.java
 - backend/src/main/java/com/wedding/service/api/AuthController.java
+- backend/src/main/java/com/wedding/service/api/GuestContactController.java
 - backend/src/main/java/com/wedding/service/api/GuestController.java
 - backend/src/main/java/com/wedding/service/api/GuestImportController.java
 - backend/src/main/java/com/wedding/service/api/InternalController.java
@@ -200,6 +205,7 @@ Latest migration: `V24__guest_login_throttle.sql`
 - frontend/public/src/api/client.ts
 - frontend/public/src/api/hooks.ts
 - frontend/public/src/api/types.ts
+- frontend/public/src/auth/ContactGate.tsx
 - frontend/public/src/auth/GuestAuthContext.tsx
 - frontend/public/src/auth/UnlockPage.tsx
 - frontend/public/src/components/index.tsx

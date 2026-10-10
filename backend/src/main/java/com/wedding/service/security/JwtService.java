@@ -18,9 +18,13 @@ public class JwtService {
   private final AppProperties properties;
   public JwtService(ObjectMapper mapper, AppProperties properties) { this.mapper = mapper; this.properties = properties; }
   public String create(UUID id, String role, UUID partyId, long minutes) {
+    return create(id, role, partyId, null, minutes);
+  }
+  public String create(UUID id, String role, UUID partyId, UUID guestId, long minutes) {
     try {
       String header = b64("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
-      Map<String,Object> claims = Map.of("sub", id.toString(), "role", role, "partyId", partyId == null ? "" : partyId.toString(), "exp", Instant.now().plusSeconds(minutes * 60).getEpochSecond());
+      Map<String,Object> claims = new java.util.HashMap<>(Map.of("sub", id.toString(), "role", role, "partyId", partyId == null ? "" : partyId.toString(), "exp", Instant.now().plusSeconds(minutes * 60).getEpochSecond()));
+      if (guestId != null) claims.put("guestId", guestId.toString());
       String body = b64(mapper.writeValueAsString(claims)); String signing = header + "." + body;
       return signing + "." + b64(sign(signing));
     } catch (Exception e) { throw new IllegalStateException("Unable to create session token", e); }
@@ -31,7 +35,7 @@ public class JwtService {
       Map<String,Object> claims = mapper.readValue(Base64.getUrlDecoder().decode(p[1]), new TypeReference<>() {});
       if (((Number) claims.get("exp")).longValue() < Instant.now().getEpochSecond()) throw new IllegalArgumentException("Expired token");
       String party = (String) claims.get("partyId");
-      return new Principal(UUID.fromString((String) claims.get("sub")), (String) claims.get("role"), party == null || party.isBlank() ? null : UUID.fromString(party));
+      return new Principal(UUID.fromString((String) claims.get("sub")), (String) claims.get("role"), party == null || party.isBlank() ? null : UUID.fromString(party), claims.get("guestId") == null ? null : UUID.fromString((String) claims.get("guestId")));
     } catch (Exception e) { throw new IllegalArgumentException("Invalid token"); }
   }
   private byte[] sign(String value) throws Exception { Mac mac = Mac.getInstance("HmacSHA256"); mac.init(new SecretKeySpec(properties.security().jwtSecret().getBytes(StandardCharsets.UTF_8), "HmacSHA256")); return mac.doFinal(value.getBytes(StandardCharsets.UTF_8)); }

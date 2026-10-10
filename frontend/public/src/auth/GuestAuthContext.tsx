@@ -1,9 +1,12 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { setToken, setUnauthorizedHandler } from '../api/client'
 
 const STORAGE_KEY = 'wedding_guest_token'
 
 interface GuestAuthCtx {
+  contactDismissed: boolean
+  dismissContact: () => void
   isAuthenticated: boolean
   login: (token: string) => void
   logout: () => void
@@ -12,6 +15,12 @@ interface GuestAuthCtx {
 const GuestAuthContext = createContext<GuestAuthCtx | null>(null)
 
 export function GuestAuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient()
+  const [contactDismissed, setContactDismissed] = useState(() => sessionStorage.getItem('wedding_contact_dismissed') === localStorage.getItem(STORAGE_KEY) && !!localStorage.getItem(STORAGE_KEY))
+  const dismissContact = useCallback(() => {
+    sessionStorage.setItem('wedding_contact_dismissed', localStorage.getItem(STORAGE_KEY) ?? '')
+    setContactDismissed(true)
+  }, [])
   // Unlike the planner UI (memory-only token), guest sessions persist in localStorage:
   // low-sensitivity content, and guests come back to the site repeatedly over months from the
   // same phone -- sessionStorage would make them re-verify every time they closed the tab.
@@ -28,22 +37,28 @@ export function GuestAuthProvider({ children }: { children: ReactNode }) {
   })
 
   const login = useCallback((token: string) => {
+    queryClient.clear()
+    sessionStorage.removeItem('wedding_contact_dismissed')
+    setContactDismissed(false)
     localStorage.setItem(STORAGE_KEY, token)
     setToken(token)
     setIsAuthenticated(true)
-  }, [])
+  }, [queryClient])
 
   const logout = useCallback(() => {
+    queryClient.clear()
+    sessionStorage.removeItem('wedding_contact_dismissed')
+    setContactDismissed(false)
     localStorage.removeItem(STORAGE_KEY)
     setToken(null)
     setIsAuthenticated(false)
-  }, [])
+  }, [queryClient])
 
   useEffect(() => {
     setUnauthorizedHandler(logout)
   }, [logout])
 
-  return <GuestAuthContext.Provider value={{ isAuthenticated, login, logout }}>{children}</GuestAuthContext.Provider>
+  return <GuestAuthContext.Provider value={{ isAuthenticated, login, logout, contactDismissed, dismissContact }}>{children}</GuestAuthContext.Provider>
 }
 
 export function useGuestAuth(): GuestAuthCtx {
