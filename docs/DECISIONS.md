@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-11 — Additional passkeys from a signed-in planner session
+**Context:** Planners need to enroll a second device after login, including when they signed in with an existing passkey.
+**Decision:** Add a protected Passkeys page and an enrollment-proof endpoint that checks the JWT owner’s password without changing their session. Offer cross-platform attachment for another device/security key and unrestricted attachment for local setup. Use the browser’s native QR/Bluetooth or security-key flow and preserve all existing credentials.
+**Rejected:** Creating a custom pairing URL or returning an enrollment credential in an app-generated QR would bypass the browser’s origin-bound WebAuthn flow. Enrolling from a long-lived JWT alone would discard the existing fresh-password protection.
+
 ## 2026-10-11 — Planner passkeys with password fallback
 **Context:** Planners should enroll a passkey after password login and prefer it on later sign-ins, while retaining password access.
 **Decision:** Use Yubico server verification and SimpleWebAuthn’s browser adapter. Persist five-minute, single-use ceremony requests in PostgreSQL; require device verification and a recent, account-bound password enrollment proof. Prompt setup again after skipping. Bind credentials to each allowlisted planner hostname, including separate Firebase aliases, and keep password fallback available.

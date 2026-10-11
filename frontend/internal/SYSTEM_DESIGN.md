@@ -49,6 +49,12 @@ After password login, `hasPasskey=false` opens a setup prompt. **Set up passkey*
 
 `src/auth/passkeys.ts` keeps the ceremony calls and supported-browser/error handling together, using the shared API client. Every passkey attempt fetches a fresh challenge. Successful authentication hands the returned JWT to `AuthContext`; tokens remain memory-only, with no “remember me.” Refreshing or closing the tab signs the planner out. Local passkey testing must use `http://localhost:3000`, not a numeric IP. Credentials belong to the planner hostname, so Firebase aliases have separate setup.
 
+### Passkey setup after login (`/passkeys`)
+
+The authenticated sidebar includes **Passkeys**, available after either password or passkey login. `PasskeysPage` confirms the signed-in account’s password through `POST /api/v1/internal/passkeys/enrollment` to obtain fresh enrollment proof without changing the session. Incorrect passwords show an error and leave the session active. Password and proof stay in memory; the password clears once confirmation succeeds.
+
+The default **Another device or security key** choice submits `anotherDevice=true` to registration options, requesting a cross-platform authenticator. The browser handles discovery, security-key prompts, or a phone QR/Bluetooth handoff if supported. The app displays guidance and does not implement its own pairing link or QR credential. **This device or password manager** leaves authenticator attachment unrestricted. Success confirms the passkey was added; cancellation leaves the page ready for retry. Existing credentials remain valid and the initial login setup prompt is unchanged.
+
 ### 5.2 Dashboard (`/`)
 
 Read-only summary counts (parties, guests, events, attending, pending RSVPs, open change requests) from `GET /api/v1/internal/dashboard`, giving planners a landing page that surfaces what needs attention (e.g., open change requests) without navigating further.

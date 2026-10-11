@@ -15,7 +15,8 @@ public class PlannerPasskeyController {
   private final PlannerPasskeyService passkeys;
   public PlannerPasskeyController(PlannerPasskeyService passkeys) { this.passkeys=passkeys; }
   public record LoginStart(@NotBlank @Email @Size(max=254) String email,@NotBlank @Size(max=512) String origin) {}
-  public record RegisterStart(@NotNull UUID enrollmentToken,@NotBlank @Size(max=512) String origin) {}
+  public record RegisterStart(@NotNull UUID enrollmentToken,@NotBlank @Size(max=512) String origin,Boolean anotherDevice) {}
+  public record Enrollment(@NotBlank @Size(max=1024) String password) {}
   public record Finish(@NotNull UUID challengeId,@NotNull JsonNode credential) {}
   private String credential(Finish input) {
     String value=input.credential().toString();
@@ -28,8 +29,11 @@ public class PlannerPasskeyController {
   @PostMapping("/auth/planner/passkeys/login/finish") Map<String,Object> loginFinish(@Valid @RequestBody Finish input) {
     return passkeys.finishLogin(input.challengeId(),credential(input));
   }
+  @PostMapping("/internal/passkeys/enrollment") Map<String,Object> enrollment(@AuthenticationPrincipal Principal actor,@Valid @RequestBody Enrollment input) {
+    return Map.of("enrollmentToken",passkeys.confirmPassword(actor.id(),input.password()));
+  }
   @PostMapping("/internal/passkeys/register/options") Map<String,Object> registrationOptions(@AuthenticationPrincipal Principal actor,@Valid @RequestBody RegisterStart input) {
-    return passkeys.beginRegistration(actor.id(),input.enrollmentToken(),input.origin());
+    return passkeys.beginRegistration(actor.id(),input.enrollmentToken(),input.origin(),Boolean.TRUE.equals(input.anotherDevice()));
   }
   @PostMapping("/internal/passkeys/register/finish") Map<String,Object> registrationFinish(@AuthenticationPrincipal Principal actor,@Valid @RequestBody Finish input) {
     return passkeys.finishRegistration(actor.id(),input.challengeId(),credential(input));

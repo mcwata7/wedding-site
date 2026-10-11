@@ -80,6 +80,12 @@ public class PlannerPasskeyService {
     if(origin==null || !config.getAllowedOrigins().contains(origin)) return false;
     return !db.many("SELECT credential_id FROM planner_passkey WHERE planner_id=:id AND rp_id=:rp",Map.of("id",planner,"rp",rpId(origin))).isEmpty();
   }
+  public UUID confirmPassword(UUID planner,String password) {
+    var rows=db.many("SELECT password_hash FROM planner_user WHERE id=:id AND active",Map.of("id",planner));
+    if(rows.isEmpty() || !db.passwords.matches(password,rows.getFirst().get("password_hash").toString()))
+      throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_CREDENTIALS","Incorrect password. Please try again.");
+    return enrollment(planner);
+  }
   public UUID enrollment(UUID planner) { return saveChallenge(planner,"ENROLLMENT",null,"{}"); }
   private UUID saveChallenge(UUID planner,String kind,String origin,String request) {
     db.named.update("DELETE FROM planner_passkey_challenge WHERE expires_at<=now()",Map.of());
@@ -126,13 +132,18 @@ public class PlannerPasskeyService {
     } catch(ApiException e) { throw e; } catch(Exception e) { throw invalid("Passkey sign-in failed. Try again or use your password."); }
   }
   public Map<String,Object> beginRegistration(UUID planner,UUID enrollmentToken,String origin) {
+    return beginRegistration(planner,enrollmentToken,origin,false);
+  }
+  public Map<String,Object> beginRegistration(UUID planner,UUID enrollmentToken,String origin,boolean anotherDevice) {
     var rp=relyingParty(origin);
     var proof=db.many("SELECT id FROM planner_passkey_challenge WHERE id=:id AND planner_id=:user AND kind='ENROLLMENT' AND expires_at>now()",Map.of("id",enrollmentToken,"user",planner));
     if(proof.isEmpty()) throw invalid("Please sign in with your password again before setting up a passkey.");
     var user=db.one("SELECT email FROM planner_user WHERE id=:id AND active",Map.of("id",planner));
     try {
+      var selection=AuthenticatorSelectionCriteria.builder().residentKey(ResidentKeyRequirement.REQUIRED).userVerification(UserVerificationRequirement.REQUIRED);
+      if(anotherDevice) selection.authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM);
       var request=rp.startRegistration(StartRegistrationOptions.builder().user(UserIdentity.builder().name(user.get("email").toString()).displayName(user.get("email").toString()).id(handle(planner)).build())
-        .authenticatorSelection(AuthenticatorSelectionCriteria.builder().residentKey(ResidentKeyRequirement.REQUIRED).userVerification(UserVerificationRequirement.REQUIRED).build())
+        .authenticatorSelection(selection.build())
         .timeout(60000).build());
       UUID id=saveChallenge(planner,"REGISTER",origin,request.toJson());
       return Map.of("challengeId",id,"publicKey",publicKey(request.toCredentialsCreateJson()));

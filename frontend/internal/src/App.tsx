@@ -1,6 +1,6 @@
 import { Routes, Route, NavLink, Navigate } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Calendar, Hotel, FileDown, Globe, Mail, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Calendar, Hotel, FileDown, Globe, Mail, LogOut, KeyRound } from 'lucide-react'
 import { useAuth } from './auth/AuthContext'
 import { LoginPage } from './auth/LoginPage'
 import { DashboardPage } from './pages/DashboardPage'
@@ -12,6 +12,7 @@ import { AccommodationsPage } from './pages/accommodations/AccommodationsPage'
 import { InvitationsPage } from './pages/invitations/InvitationsPage'
 import { ReportsPage } from './pages/reports/ReportsPage'
 import { SitePage } from './pages/site/SitePage'
+import { PasskeysPage } from './pages/PasskeysPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -26,6 +27,7 @@ const navItems = [
   { to: '/invitations', icon: Mail, label: 'Invitations' },
   { to: '/site', icon: Globe, label: 'Wedding Site' },
   { to: '/reports', icon: FileDown, label: 'Reports' },
+  { to: '/passkeys', icon: KeyRound, label: 'Passkeys' },
 ]
 
 function Layout({ children }: { children: React.ReactNode }) {
@@ -93,6 +95,7 @@ export default function App() {
               <Route path="invitations" element={<InvitationsPage />} />
               <Route path="site" element={<SitePage />} />
               <Route path="reports" element={<ReportsPage />} />
+              <Route path="passkeys" element={<PasskeysPage />} />
             </Routes>
           </Layout>
         </ProtectedRoute>

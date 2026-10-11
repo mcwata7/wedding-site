@@ -78,6 +78,7 @@ MediaController.java | Post(value = "/internal/media", consumes = MediaType.MULT
 PlannerPasskeyController.java | @RestController Base("/api/v1")
 PlannerPasskeyController.java | Post("/auth/planner/passkeys/login/finish") Map<String,Object> loginFinish(@Valid @RequestBody Finish input)
 PlannerPasskeyController.java | Post("/auth/planner/passkeys/login/options") Map<String,Object> loginOptions(@Valid @RequestBody LoginStart input)
+PlannerPasskeyController.java | Post("/internal/passkeys/enrollment") Map<String,Object> enrollment(@AuthenticationPrincipal Principal actor,@Valid @RequestBody
 PlannerPasskeyController.java | Post("/internal/passkeys/register/finish") Map<String,Object> registrationFinish(@AuthenticationPrincipal Principal actor,@Valid
 PlannerPasskeyController.java | Post("/internal/passkeys/register/options") Map<String,Object> registrationOptions(@AuthenticationPrincipal Principal actor,@Val
 ReportController.java | @RestController Base("/api/v1/internal/reports")
@@ -130,6 +131,7 @@ Latest migration: `V28__planner_passkeys.sql`
 
 ### frontend/internal
 - frontend/internal/src/pages/DashboardPage.tsx
+- frontend/internal/src/pages/PasskeysPage.tsx
 - frontend/internal/src/pages/accommodations/AccommodationsPage.tsx
 - frontend/internal/src/pages/events/EventsPage.tsx
 - frontend/internal/src/pages/invitations/CardDesignSection.tsx
@@ -200,6 +202,7 @@ Latest migration: `V28__planner_passkeys.sql`
 - frontend/internal/src/lib/format.ts
 - frontend/internal/src/main.tsx
 - frontend/internal/src/pages/DashboardPage.tsx
+- frontend/internal/src/pages/PasskeysPage.tsx
 - frontend/internal/src/pages/accommodations/AccommodationsPage.tsx
 - frontend/internal/src/pages/events/EventsPage.tsx
 - frontend/internal/src/pages/invitations/CardDesignSection.tsx

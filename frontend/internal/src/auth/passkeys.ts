@@ -20,8 +20,8 @@ export async function signInWithPasskey(email: string): Promise<PlannerSession> 
   const credential = await startAuthentication({ optionsJSON: options.publicKey })
   return api.post<PlannerSession>('/api/v1/auth/planner/passkeys/login/finish', { challengeId: options.challengeId, credential })
 }
-export async function registerPasskey(enrollmentToken: string): Promise<void> {
-  const options = await api.post<{ challengeId: string; publicKey: PublicKeyCredentialCreationOptionsJSON }>('/api/v1/internal/passkeys/register/options', { enrollmentToken, origin: window.location.origin })
+export async function registerPasskey(enrollmentToken: string, anotherDevice = false): Promise<void> {
+  const options = await api.post<{ challengeId: string; publicKey: PublicKeyCredentialCreationOptionsJSON }>('/api/v1/internal/passkeys/register/options', { enrollmentToken, origin: window.location.origin, anotherDevice })
   const credential = await startRegistration({ optionsJSON: options.publicKey })
   await api.post('/api/v1/internal/passkeys/register/finish', { challengeId: options.challengeId, credential })
 }

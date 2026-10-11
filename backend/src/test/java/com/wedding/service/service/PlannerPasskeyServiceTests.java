@@ -52,6 +52,9 @@ class PlannerPasskeyServiceTests {
     when(sql.queryForList(contains("SELECT email FROM planner_user"),anyMap())).thenReturn(List.of(Map.of("email","user@example.com")));
     var options=service.beginRegistration(planner,UUID.randomUUID(),origin);
     var key=(JsonNode)options.get("publicKey");
+    assertTrue(key.at("/authenticatorSelection/authenticatorAttachment").isMissingNode());
+    var other=service.beginRegistration(planner,UUID.randomUUID(),origin,true);
+    assertEquals("cross-platform",((JsonNode)other.get("publicKey")).at("/authenticatorSelection/authenticatorAttachment").asText());
     assertEquals("required",key.at("/authenticatorSelection/residentKey").asText());
     assertEquals("required",key.at("/authenticatorSelection/userVerification").asText());
     assertEquals("localhost",key.at("/rp/id").asText());
@@ -74,6 +77,29 @@ class PlannerPasskeyServiceTests {
     assertEquals("PASSKEY_INVALID",assertThrows(ApiException.class,()->service.finishRegistration(planner,UUID.randomUUID(),"{}")).code);
     verifyNoInteractions(jwt);
     verify(sql,never()).update(contains("INSERT INTO planner_passkey("),anyMap());
+  }
+  @Test void passwordConfirmationRejectsWrongPasswordAndInactiveAccountWithoutEnrollment() {
+    String hash=new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("correct password");
+    when(sql.queryForList(contains("SELECT password_hash FROM planner_user WHERE id=:id AND active"),anyMap()))
+      .thenReturn(List.of(Map.of("password_hash",hash))).thenReturn(List.of());
+    for(String password:List.of("wrong password","correct password")) {
+      var error=assertThrows(ApiException.class,()->service.confirmPassword(planner,password));
+      assertEquals("INVALID_CREDENTIALS",error.code);
+      assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST,error.status);
+    }
+    verify(sql,never()).update(anyString(),any(SqlParameterSource.class));
+    verifyNoInteractions(jwt);
+  }
+  @Test void passwordConfirmationIssuesProofOnlyForAuthenticatedOwner() {
+    String hash=new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder().encode("correct password");
+    when(sql.queryForList(contains("SELECT password_hash FROM planner_user WHERE id=:id AND active"),eq(Map.of("id",planner))))
+      .thenReturn(List.of(Map.of("password_hash",hash)));
+    assertNotNull(service.confirmPassword(planner,"correct password"));
+    var params=org.mockito.ArgumentCaptor.forClass(SqlParameterSource.class);
+    verify(sql).update(contains("INSERT INTO planner_passkey_challenge"),params.capture());
+    assertEquals(planner,params.getValue().getValue("user"));
+    assertEquals("ENROLLMENT",params.getValue().getValue("kind"));
+    verifyNoInteractions(jwt);
   }
   @Test void malformedProofConsumesChallengeAndCannotCreateSession() {
     UUID challenge=UUID.randomUUID();
