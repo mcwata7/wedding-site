@@ -24,7 +24,7 @@ class GuestContactControllerTests {
   @BeforeEach void setup() {
     db.execute("DROP TABLE IF EXISTS guest"); db.execute("DROP TABLE IF EXISTS party");
     db.execute("CREATE TABLE party(id UUID PRIMARY KEY,mailing_address VARCHAR(2000),archived BOOLEAN DEFAULT FALSE)");
-    db.execute("CREATE TABLE guest(id UUID PRIMARY KEY,party_id UUID,email VARCHAR(254) UNIQUE,phone VARCHAR(50),active BOOLEAN DEFAULT TRUE,updated_at TIMESTAMP,dietary_requirements VARCHAR(100))");
+    db.execute("CREATE TABLE guest(id UUID PRIMARY KEY,party_id UUID,first_name VARCHAR(200) DEFAULT 'Original',last_name VARCHAR(200) DEFAULT 'Guest',email VARCHAR(254) UNIQUE,phone VARCHAR(50),active BOOLEAN DEFAULT TRUE,updated_at TIMESTAMP,dietary_requirements VARCHAR(100))");
     party=UUID.randomUUID(); guest=UUID.randomUUID(); other=UUID.randomUUID();
     db.update("INSERT INTO party(id) VALUES(?)",party);
     db.update("INSERT INTO guest(id,party_id,dietary_requirements) VALUES(?,?,'vegetarian')",guest,party);
@@ -45,6 +45,27 @@ class GuestContactControllerTests {
         .content("{\"email\":null,\"phone\":\"   \"}"))
         .andExpect(status().isOk()).andExpect(jsonPath("$.email").value("existing@example.com")).andExpect(jsonPath("$.complete").value(false));
   }
+  @Test void namesArePrefilledAndOnlyTheAuthenticatedGuestCanChangeThem() throws Exception {
+    mvc.perform(get("/api/v1/guest/contact").header("Authorization","Bearer "+token))
+        .andExpect(jsonPath("$.firstName").value("Original")).andExpect(jsonPath("$.lastName").value("Guest"));
+    mvc.perform(patch("/api/v1/guest/contact").header("Authorization","Bearer "+token).contentType("application/json")
+        .content("{\"firstName\":\"  Mary   Jane  \",\"lastName\":\"  Updated  \",\"guestId\":\"%s\"}".formatted(other)))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.firstName").value("Mary Jane"))
+        .andExpect(jsonPath("$.lastName").value("Updated")).andExpect(jsonPath("$.complete").value(false));
+    assertEquals("Original",db.queryForObject("SELECT first_name FROM guest WHERE id=?",String.class,other));
+    assertEquals("Guest",db.queryForObject("SELECT last_name FROM guest WHERE id=?",String.class,other));
+    assertEquals("vegetarian",db.queryForObject("SELECT dietary_requirements FROM guest WHERE id=?",String.class,guest));
+  }
+  @Test void blankOrOmittedNamesPreserveSavedValuesAndOversizedNamesDoNotSave() throws Exception {
+    for(String body:new String[]{"{\"firstName\":\"   \",\"lastName\":null}","{\"phone\":\"123\"}"})
+      mvc.perform(patch("/api/v1/guest/contact").header("Authorization","Bearer "+token).contentType("application/json").content(body))
+        .andExpect(status().isOk()).andExpect(jsonPath("$.firstName").value("Original")).andExpect(jsonPath("$.lastName").value("Guest"));
+    for(String field:new String[]{"firstName","lastName"})
+      mvc.perform(patch("/api/v1/guest/contact").header("Authorization","Bearer "+token).contentType("application/json")
+          .content("{\""+field+"\":\""+"x".repeat(201)+"\",\"phone\":\"Must not save\"}"))
+          .andExpect(status().isBadRequest());
+    assertEquals("123",db.queryForObject("SELECT phone FROM guest WHERE id=?",String.class,guest));
+  }
   @Test void partyAddressIsSharedButGuestContactIsIndividual() throws Exception {
     db.update("UPDATE party SET mailing_address='Shared address' WHERE id=?",party);
     String second=jwt.create(party,"GUEST",party,other,30);
@@ -54,9 +75,10 @@ class GuestContactControllerTests {
   }
   @Test void duplicateEmailDoesNotSavePartyAddress() throws Exception {
     mvc.perform(patch("/api/v1/guest/contact").header("Authorization","Bearer "+token).contentType("application/json")
-        .content("{\"email\":\"other@example.com\",\"mailingAddress\":\"Should not save\"}"))
+        .content("{\"email\":\"other@example.com\",\"mailingAddress\":\"Should not save\",\"firstName\":\"Should not save\"}"))
         .andExpect(status().isConflict()).andExpect(jsonPath("$.code").value("EMAIL_ALREADY_IN_USE"));
     assertNull(db.queryForObject("SELECT mailing_address FROM party WHERE id=?",String.class,party));
+    assertEquals("Original",db.queryForObject("SELECT first_name FROM guest WHERE id=?",String.class,guest));
   }
   @Test void invalidEmailAndOversizedAddressAreRejected() throws Exception {
     for(String body : new String[]{"{\"email\":\"invalid\"}","{\"mailingAddress\":\""+"x".repeat(2001)+"\"}"})

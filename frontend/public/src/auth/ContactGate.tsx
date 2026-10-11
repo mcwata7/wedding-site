@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiRequestError } from '../api/client'
 import { useGuestAuth } from './GuestAuthContext'
 
-export interface Contact { email?: string; phone?: string; mailingAddress?: string; complete: boolean }
+export interface Contact { firstName?: string; lastName?: string; email?: string; phone?: string; mailingAddress?: string; complete: boolean }
 
 /** Check once per authenticated session. Skipping is temporary, not profile completion. */
 export function ContactGate({ children }: { children: React.ReactNode }) {
@@ -27,6 +27,8 @@ export function ContactGate({ children }: { children: React.ReactNode }) {
 export function ContactForm({ contact, onDone, editing = false }: { contact: Contact; onDone?: () => void; editing?: boolean }) {
   const queryClient = useQueryClient()
   const [saved, setSaved] = useState(false)
+  const [firstName, setFirstName] = useState(contact.firstName ?? '')
+  const [lastName, setLastName] = useState(contact.lastName ?? '')
   const [email, setEmail] = useState(contact.email ?? '')
   const [phone, setPhone] = useState(contact.phone ?? '')
   const [mailingAddress, setAddress] = useState(contact.mailingAddress ?? '')
@@ -35,8 +37,10 @@ export function ContactForm({ contact, onDone, editing = false }: { contact: Con
   const save = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true); setError(''); setSaved(false)
     try {
-      const updated = await api.patch<Contact>('/api/v1/guest/contact', { email: email.trim() || null, phone: phone.trim() || null, mailingAddress: mailingAddress.trim() || null })
+      const updated = await api.patch<Contact>('/api/v1/guest/contact', { firstName: firstName.trim() || null, lastName: lastName.trim() || null, email: email.trim() || null, phone: phone.trim() || null, mailingAddress: mailingAddress.trim() || null })
       queryClient.setQueryData(['guest-contact'], updated)
+      setFirstName(updated.firstName ?? ''); setLastName(updated.lastName ?? '')
+      void queryClient.invalidateQueries({ queryKey: ['guest-party'] })
       setEmail(updated.email ?? ''); setPhone(updated.phone ?? ''); setAddress(updated.mailingAddress ?? '')
       setSaved(true)
       onDone?.()
@@ -52,6 +56,11 @@ export function ContactForm({ contact, onDone, editing = false }: { contact: Con
         {editing && <p className="text-sm text-ink/70">Leave a field blank to keep its saved value.</p>}
         {saved && <p role="status" className="text-green-800">Contact information saved.</p>}
         {error && <p role="alert" className="text-red-700">{error}</p>}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="block">First name<input className={inputClass} autoComplete="given-name" maxLength={200} value={firstName} onChange={e => setFirstName(e.target.value)} /></label>
+          <label className="block">Last name<input className={inputClass} autoComplete="family-name" maxLength={200} value={lastName} onChange={e => setLastName(e.target.value)} /></label>
+        </div>
+        <p className="text-sm text-ink/70">Use your updated name the next time you sign in.</p>
         <label className="block">Email<input className={inputClass} type="email" autoComplete="email" maxLength={254} value={email} onChange={e => setEmail(e.target.value)} /></label>
         <label className="block">Phone number<input className={inputClass} type="tel" autoComplete="tel" maxLength={50} value={phone} onChange={e => setPhone(e.target.value)} /></label>
         <label className="block">Party mailing address<textarea className={inputClass} autoComplete="street-address" rows={4} maxLength={2000} placeholder="Include city, postal code and country" value={mailingAddress} onChange={e => setAddress(e.target.value)} /></label>

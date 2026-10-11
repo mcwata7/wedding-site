@@ -108,21 +108,21 @@ The planner UI covers every functional-requirement action in §5.1–5.6: login 
 ### Guest contact collection
 
 After name-and-answer authentication, guests with missing contact details see an
-optional contact form before the site. Email and phone belong to the individual
+optional contact form before the site. First and last name, email and phone belong to the individual
 guest; the mailing address belongs to the invitation party and is shared by its
 guests for sending invitations. Existing values prefill the form, and guests
 with all three values present skip it automatically. Save may be partial;
 blank inputs preserve existing values. “Skip for now” and successful saves
 dismiss the form for the current tab/session, including reloads. Missing details
 can be requested on a later login or a new tab. An authenticated “Contact info” header link opens the same
-form at `/contact-info` for later edits in either layout. Planners can edit party mailing addresses in the internal tool.
+form at `/contact-info` for later edits in either layout. Guests can revise their own first/last name in this form; blank values preserve saved names, and future sign-ins use the updated name. Existing sessions retain the same guest identity. Planners can edit party mailing addresses in the internal tool.
 
-### Label color customization
+### Schedule date color customization
 
-Planners can set section-label text colors (such as Join Us) separately from
-schedule-date text colors. Controls under Site Styling and Tile Styling show
-samples and a 4.5:1 small-text contrast target against the selected background.
-Reset restores the existing accent color. Both site layouts use these values.
+Planners can set schedule-date text colors under Tile Styling, with a preview
+and a 4.5:1 small-text contrast target against the selected background. Reset
+restores the existing accent color. Both layouts use this value; decorative
+section labels and their color control have been removed.
 
 ## 6. Core Data Model
 

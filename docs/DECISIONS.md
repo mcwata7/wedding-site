@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-11 — Guest name edits through the contact form
+**Context:** Guests need to correct their first/last name from Contact info.
+**Decision:** Reuse the guest-scoped contact PATCH and shared form, preserving blank names and contact-completion rules. Keep the guest UUID unchanged, collapse name whitespace to match sign-in normalization, and tell guests to use their saved name on future logins. Invalidate party data so RSVP names reflect edits.
+**Rejected:** Editing the party display name or allowing a submitted guest ID to select the target would change the invitation household or allow changes to another guest.
+
 ## 2026-10-11 — Remove decorative section labels
 **Context:** The public site should omit the small labels above page titles, and the planner should no longer offer their styling control.
 **Decision:** Remove eyebrow rendering from the shared heading component, its page props, and section-color configuration throughout both apps/API. Drop the unused column in a new migration while keeping schedule date colors adjustable.

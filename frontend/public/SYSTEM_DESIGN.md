@@ -138,7 +138,7 @@ contact gate. An always-visible authenticated header link, “Contact info,” o
 `/contact-info` in both site layouts. This route reuses `ContactForm` in edit
 mode inside the site layout, with a “Save changes” button and save confirmation.
 It remains accessible after skipping collection and for already-complete
-profiles; direct entry bypasses the initial contact gate. Current values are
+profiles; direct entry bypasses the initial contact gate. The shared form includes prefilled first/last name fields with given/family-name autofill and a 200-character limit; it explains that future sign-ins use the saved name. Blank names preserve saved values. Name edits update the contact cache and invalidate the guest-party query, so RSVP guest names refresh without changing the authenticated guest UUID. Current values are
 loaded on entry, successful saves update the contact-query cache, and blank
 fields retain saved values. Focus/reconnect refetches are disabled while editing
 to preserve unsaved input. Legacy sessions offer a fresh login before editing.

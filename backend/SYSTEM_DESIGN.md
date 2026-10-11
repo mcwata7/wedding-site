@@ -69,13 +69,12 @@ the contact endpoint responds with `409 GUEST_IDENTITY_REQUIRED` so the UI can
 offer a fresh login or let the visitor skip.
 
 The endpoint checks that the active guest belongs to the authenticated,
-non-archived party. It returns `email`, `phone`, `mailingAddress`, and `complete`
-(all three nonblank). Its transactional patch updates only guest email/phone
+non-archived party. It returns `firstName`, `lastName`, `email`, `phone`, `mailingAddress`, and `complete`
+(all three nonblank). Its transactional patch updates only the authenticated guest’s first/last name and email/phone
 and party mailing address, preserving unrelated guest fields. Null or blank
-inputs preserve values; supplied values are trimmed. Email is validated and
-field lengths are limited to 254/50/2000 characters. The existing unique-email
+inputs preserve values; supplied values are trimmed. Name whitespace is collapsed to match login normalization, case is preserved, and each name is limited to 200 characters. Names remain guest-specific and do not affect the contact-completion check. Email is validated and contact field lengths remain limited to 254/50/2000 characters. The existing unique-email
 constraint is preserved: conflicts return `409 EMAIL_ALREADY_IN_USE` and roll
-back the entire contact update, including the party address. `V25` adds nullable
+back the entire contact update, including name edits and the party address. `V25` adds nullable
 `party.mailing_address`. `V26` removes the legacy party `contact_email` and
 `contact_phone` columns; email and phone remain exclusively on guests. Party
 creation and reads no longer accept or return those fields. Planner generic party updates include the address column
