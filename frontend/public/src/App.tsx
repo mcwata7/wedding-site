@@ -17,13 +17,11 @@ import { useActiveSection, useOverflowFade } from './lib/scroll'
 import { useSiteTheme, type HeaderTheme } from './lib/theme'
 import type { SitePage } from './api/types'
 
-/** When no header_font_color is set, today's fixed text-accent/text-ink classes apply verbatim
- * (byte-identical to before this feature existed). When one IS set, both active and inactive
- * states switch to an inline `color` (see NavItem) instead -- so these classes drop their own
- * color, keeping only the active state's font-medium/bg-accent/10 "you are here" tint, which
- * isn't itself a customizable field. sizeClass replaces the previously-hardcoded text-sm. */
+/** Custom header colors apply to both active and inactive links; the active tint
+ * and weight still identify the current page. Hover/focus text styling is shared
+ * by routed pages, section anchors, and Contact info. */
 const NAV_ITEM_CLASS = (active: boolean, sizeClass: string, hasCustomColor: boolean) =>
-  `px-3 py-1.5 ${sizeClass} tracking-wide whitespace-nowrap rounded-md transition-colors ${
+  `header-nav-item px-3 py-1.5 ${sizeClass} tracking-wide whitespace-nowrap rounded-md transition-colors ${
     active
       ? `font-medium bg-accent/10 ${hasCustomColor ? '' : 'text-accent'}`
       : hasCustomColor ? '' : 'text-ink/60 hover:text-ink'
@@ -51,7 +49,7 @@ function NavItem({ page, layout, activeSection, theme }: { page: SitePage; layou
         className={({ isActive }) => NAV_ITEM_CLASS(isActive, theme.sizeClass, hasCustomColor)}
         style={({ isActive }) => ({ color: colorFor(isActive) })}
       >
-        {page.label}
+        <span className="header-nav-label">{page.label}</span>
       </NavLink>
     )
   }
@@ -62,7 +60,7 @@ function NavItem({ page, layout, activeSection, theme }: { page: SitePage; layou
       className={NAV_ITEM_CLASS(active, theme.sizeClass, hasCustomColor)}
       style={{ color: colorFor(active) }}
     >
-      {page.label}
+      <span className="header-nav-label">{page.label}</span>
     </Link>
   )
 }
@@ -82,7 +80,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       <header
-        className="border-b-2 border-maroon/20 bg-paper/95"
+        className="bg-paper/95"
         style={{ backgroundColor: theme.style.backgroundColor }}
       >
         <nav
@@ -100,7 +98,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             className={({ isActive }) => NAV_ITEM_CLASS(isActive, theme.sizeClass, theme.color !== undefined)}
             style={({ isActive }) => ({ color: isActive ? theme.color : theme.inactiveColor })}
           >
-            Contact info
+            <span className="header-nav-label">Contact info</span>
           </NavLink>
         </nav>
       </header>

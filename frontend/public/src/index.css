@@ -22,6 +22,23 @@ body {
   @apply bg-paper text-ink antialiased;
 }
 
+.header-nav-label {
+  display: inline-block;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  transition: transform 180ms ease, font-weight 180ms ease;
+}
+.header-nav-item:hover .header-nav-label,
+.header-nav-item:focus-visible .header-nav-label {
+  font-weight: 700;
+  transform: scale(1.05);
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-nav-label {
+    transition: none;
+  }
+}
+
 /* The header's nav row: centered while every item fits, horizontally scrollable once they don't
    (narrow phones, a large header_font_size, or simply more pages). `safe center` is what lets
    those two modes coexist -- plain `justify-content: center` centers the *overflowing* line too,
