@@ -133,6 +133,11 @@ drift. Report checks actually run and any unresolved failures.
 
 ## Deployment
 
+Use `$push-main` (the repository skill at
+`.agents/skills/push-main/SKILL.md`) when asked to commit and push changes to
+`main`. It covers review, integration with remote changes, relevant checks,
+and verification of the pushed commit.
+
 Production runs the API, PostgreSQL, and Caddy on a GCP Compute Engine VM;
 both frontends use Firebase Hosting. `.github/workflows/deploy.yml` is the
 normal deployment path. Root Makefile deploy targets are a manual fallback.
