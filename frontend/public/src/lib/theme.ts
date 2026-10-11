@@ -90,7 +90,6 @@ export function useSiteTheme(): HeaderTheme {
     root.fontSize = isFontSize(settings?.site_font_size) ? `${SITE_FONT_SIZE_PX[settings.site_font_size]}px` : ''
     setOrRemove(root, '--color-tile-bg', hexToRgbTriplet(settings?.tile_bg_color))
     setOrRemove(root, '--color-tile-border', hexToRgbTriplet(settings?.tile_border_color))
-    setOrRemove(root, '--color-section-label', hexToRgbTriplet(settings?.section_label_color))
     setOrRemove(root, '--color-date-label', hexToRgbTriplet(settings?.date_label_color))
 
     return () => {
@@ -100,10 +99,9 @@ export function useSiteTheme(): HeaderTheme {
       root.fontSize = ''
       root.removeProperty('--color-tile-bg')
       root.removeProperty('--color-tile-border')
-      root.removeProperty('--color-section-label')
       root.removeProperty('--color-date-label')
     }
-  }, [settings?.site_font_color, settings?.site_bg_color, settings?.site_font_family, settings?.site_font_size, settings?.tile_bg_color, settings?.tile_border_color, settings?.section_label_color, settings?.date_label_color])
+  }, [settings?.site_font_color, settings?.site_bg_color, settings?.site_font_family, settings?.site_font_size, settings?.tile_bg_color, settings?.tile_border_color, settings?.date_label_color])
 
   const headerFamily = settings?.header_font_family ? FONT_FAMILIES[settings.header_font_family]?.css : undefined
   const headerColorRgb = hexToRgbTriplet(settings?.header_font_color)

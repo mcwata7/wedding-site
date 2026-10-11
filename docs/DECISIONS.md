@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-11 — Remove decorative section labels
+**Context:** The public site should omit the small labels above page titles, and the planner should no longer offer their styling control.
+**Decision:** Remove eyebrow rendering from the shared heading component, its page props, and section-color configuration throughout both apps/API. Drop the unused column in a new migration while keeping schedule date colors adjustable.
+**Rejected:** Hiding labels only with CSS would retain unnecessary markup and an ineffective planner control.
+
 ## 2026-10-11 — One wedding RSVP stored on each guest
 **Context:** Guests should respond for the entire wedding rather than separately for every event.
 **Decision:** Store status, note, source and response timestamp on `guest`. Remove event-derived RSVP creation and filtering; keep party-scoped guest responses, audited planner overrides, and after-commit Slack notifications. Event capacities remain planning metadata and event deadlines no longer gate wedding responses; accommodation limits are unchanged. Migration V29 consolidates matching non-pending responses, uses the most recent matching response metadata, and leaves conflicts pending with a confirmation note. Preserve all event responses and eligibility rows in history tables rather than deleting them.

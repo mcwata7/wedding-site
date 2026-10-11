@@ -100,7 +100,6 @@ export function SitePage() {
         site_bg_color: settings.site_bg_color ?? '',
         tile_bg_color: settings.tile_bg_color ?? '',
         tile_border_color: settings.tile_border_color ?? '',
-        section_label_color: settings.section_label_color ?? '',
         date_label_color: settings.date_label_color ?? '',
       })
     }
@@ -583,7 +582,6 @@ export function SitePage() {
                 <ColorField label="Font Color" value={form.site_font_color ?? ''} onChange={v => setForm(f => ({ ...f, site_font_color: v }))} />
                 <ColorField label="Background Color" value={form.site_bg_color ?? ''} onChange={v => setForm(f => ({ ...f, site_bg_color: v }))} />
               </div>
-              <LabelColorField label="Section Label Color" value={form.section_label_color ?? ''} background={form.site_bg_color ?? ''} fallbackBackground="#f6ecdf" sample="Join Us" description="Small labels above page headings, including Join Us, Good to Know, Plan Your Trip, and Explore." onChange={v => setForm(f => ({ ...f, section_label_color: v }))} />
             </div>
 
             <div className="border-t pt-4">

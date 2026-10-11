@@ -1,6 +1,6 @@
 import { Fragment } from 'react'
 import { useSiteConfig, useSchedule, useTravelInfo, useThingsToDo, useFaq, useSectionPages } from '../api/hooks'
-import { LoadingSpinner, ErrorMessage, Section, SectionOrnament } from '../components'
+import { LoadingSpinner, ErrorMessage, Section } from '../components'
 import { ApiRequestError } from '../api/client'
 import { useHashScroll } from '../lib/scroll'
 import { HomePage } from './HomePage'
@@ -55,7 +55,6 @@ export function OnePage() {
             {i > 0 && (
               <div className="my-16">
                 <div className="temple-divider text-xs" />
-                <SectionOrnament index={i - 1} />
               </div>
             )}
             <Section id={page.slug}>

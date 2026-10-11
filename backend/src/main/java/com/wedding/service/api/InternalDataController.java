@@ -73,7 +73,7 @@ public class InternalDataController {
     "invitation_front_image_id","invitation_back_image_id","invitation_orientation","invitation_card_layout","site_layout",
     "header_font_family","header_font_color","header_font_size","header_bg_color",
     "site_font_family","site_font_color","site_font_size","site_bg_color",
-    "tile_bg_color","tile_border_color","section_label_color","date_label_color",
+    "tile_bg_color","tile_border_color","date_label_color",
     "home_design_image_id","home_design_only");
   private static final Set<String> DATE_COLUMNS = Set.of("wedding_start_date","wedding_end_date");
   @PatchMapping("/site/settings") Map<String,Object> updateSiteSettings(@AuthenticationPrincipal Principal actor,@RequestBody Map<String,Object> input) {
@@ -108,7 +108,7 @@ public class InternalDataController {
       } else if ("header_font_size".equals(col) || "site_font_size".equals(col)) {
         setters.add(col + "=:" + col);
         val = parseFontSizeOrNull(val);
-      } else if ("section_label_color".equals(col) || "date_label_color".equals(col)) {
+      } else if ("date_label_color".equals(col)) {
         setters.add(col + "=:" + col);
         val = parseLabelColorOrNull(val);
       } else if ("header_font_color".equals(col) || "header_bg_color".equals(col) || "site_font_color".equals(col) || "site_bg_color".equals(col)

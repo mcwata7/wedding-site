@@ -93,7 +93,7 @@ SiteController.java | Get("/travel") Map<String,Object> travel()
 
 ## Database schema (Flyway migrations)
 
-Latest migration: `V29__guest_wedding_rsvp.sql`
+Latest migration: `V30__remove_section_labels.sql`
 
 | Migration | Tables touched |
 |---|---|
@@ -125,6 +125,7 @@ Latest migration: `V29__guest_wedding_rsvp.sql`
 | V27__label_colors.sql | site_settings |
 | V28__planner_passkeys.sql | planner_passkey,planner_passkey_challenge |
 | V29__guest_wedding_rsvp.sql | event_eligibility,guest,rsvp |
+| V30__remove_section_labels.sql | site_settings |
 
 ## Frontend apps
 

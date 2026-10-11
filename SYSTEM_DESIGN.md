@@ -266,3 +266,5 @@ API standards:
 - **Public site styling model:** 8 nullable `site_settings` columns (header/site × font family/color/size/background color, null = built-in look) let a planner restyle the guest site, plus `home_design_image_id`/`home_design_only` for a Home page that's designed entirely outside the app and shown as one image. Both are edited on the planner UI's Site → General/Pages tabs and take effect with no deploy. See `frontend/public/SYSTEM_DESIGN.md` §5.9–§5.10 for the guest-app mechanics (CSS-variable theming, the 10 bundled fonts) and `backend/SYSTEM_DESIGN.md` §12 for why these columns are validated differently from `site_layout`.
 
 Planners can replace a party’s verification answer in Edit Party. The existing value is never displayed; leaving the new answer blank preserves it. Replacements affect future guest logins, without clearing login lockouts or revoking existing sessions.
+
+Public page headings display the configured title without decorative section labels such as Join Us or Plan Your Trip, or the branding icons above sections. The planner no longer offers a section-label color control; schedule dates retain their separate color setting.

@@ -123,15 +123,9 @@ includes a Mailing Address textarea using the existing generic party-update
 mutation. This is a household/invitation address, separate from each guest's
 email and phone, and is shared with the guest contact-collection prompt.
 
-### Label color controls
+### Date color control
 
-Site → General → Site Styling includes Section Label Color; Tile Styling
-includes Date Label Color. Each reuses the color swatch/hex input and Reset,
-plus a sample rendered against the currently selected site/tile background.
-A WCAG relative-luminance contrast ratio indicates whether the small text
-meets the 4.5:1 target. Preview updates before saving; it is advisory and
-lower-contrast colors are permitted. Empty controls reset to the existing
-accent color. New label fields are hex-validated by the API.
+Site → General → Tile Styling includes Date Label Color. It reuses the color swatch/hex input and Reset, plus a sample rendered against the currently selected tile background. A WCAG relative-luminance contrast ratio indicates whether the small text meets the 4.5:1 target. Preview updates before saving; it is advisory and lower-contrast colors are permitted. An empty control resets to the existing accent color. The API validates the hex value. Section labels and their color control have been removed.
 
 ## 6. Application Architecture
 

@@ -185,7 +185,6 @@ export interface SiteSettings {
   site_font_size?: 'SMALL' | 'MEDIUM' | 'LARGE'
   site_bg_color?: string
   tile_bg_color?: string
-  section_label_color?: string
   date_label_color?: string
   tile_border_color?: string
   home_design_image_id?: string

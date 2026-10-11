@@ -19,7 +19,7 @@ export function TravelPage() {
   return (
     <div>
       <PageBanner src={siteMediaUrl(page?.image_id)} />
-      <PageHeading eyebrow="Plan Your Trip" title={page?.heading || 'Travel'} />
+      <PageHeading title={page?.heading || 'Travel'} />
       {page?.body ? (
         <p className="max-w-2xl mx-auto text-ink/80 whitespace-pre-line leading-relaxed mb-10">{page.body}</p>
       ) : (

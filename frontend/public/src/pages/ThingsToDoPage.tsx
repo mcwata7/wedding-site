@@ -19,7 +19,7 @@ export function ThingsToDoPage() {
   return (
     <div>
       <PageBanner src={siteMediaUrl(page?.image_id)} />
-      <PageHeading eyebrow="Explore" title={page?.heading || 'Things To Do'} />
+      <PageHeading title={page?.heading || 'Things To Do'} />
       {page?.body && (
         <p className="max-w-xl mx-auto text-center text-ink/70 whitespace-pre-line mb-10">{page.body}</p>
       )}

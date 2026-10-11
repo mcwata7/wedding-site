@@ -82,13 +82,9 @@ creation and reads no longer accept or return those fields. Planner generic part
 and retain existing auditing. Contact details are returned only by the
 protected profile endpoint, not by the unauthenticated name lookup.
 
-### Label color settings
+### Date label color settings
 
-`V27` adds nullable `site_settings.section_label_color` and `date_label_color`.
-The site-settings patch allows both fields, validates three/six-digit hex
-(with an optional `#`), normalizes to lowercase with `#`, and maps null/blank
-to null. Existing audited settings updates and guest config reads carry the
-fields without a separate endpoint. Defaults remain a frontend concern.
+`V27` originally added section/date label colors. `V30__remove_section_labels.sql` drops the unused `section_label_color` after removal of public section labels and the planner control. Site-settings PATCH no longer accepts that field, and settings reads omit it. `date_label_color` remains editable: the API validates three/six-digit hex with an optional `#`, normalizes to lowercase with `#`, and maps null/blank to null. Existing auditing and guest config reads carry the field. Defaults remain a frontend concern.
 
 ### Planner passkeys
 

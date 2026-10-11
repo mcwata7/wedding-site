@@ -19,7 +19,7 @@ export function SchedulePage() {
   return (
     <div>
       <PageBanner src={siteMediaUrl(page?.image_id)} />
-      <PageHeading eyebrow="Join Us" title={page?.heading || 'Schedule'} />
+      <PageHeading title={page?.heading || 'Schedule'} />
       {page?.body && (
         <p className="max-w-xl mx-auto text-center text-ink/70 mb-10">{page.body}</p>
       )}

@@ -17,7 +17,7 @@ export function FaqPage() {
   return (
     <div>
       <PageBanner src={siteMediaUrl(page?.image_id)} />
-      <PageHeading eyebrow="Good to Know" title={page?.heading || 'FAQ'} />
+      <PageHeading title={page?.heading || 'FAQ'} />
       {page?.body && (
         <p className="max-w-2xl mx-auto text-center text-ink/70 whitespace-pre-line mb-10">{page.body}</p>
       )}
