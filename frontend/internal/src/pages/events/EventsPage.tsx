@@ -10,7 +10,7 @@ import {
   LoadingSpinner, ErrorMessage, PageHeader, useToast, Badge, MediaPicker,
 } from '../../components'
 import { ApiRequestError, mediaUrl } from '../../api/client'
-import { fmtDateTime, fmtDate, fmtMoney } from '../../lib/format'
+import { fmtDateTime, fmtMoney } from '../../lib/format'
 import type { Event, Venue } from '../../api/types'
 import { VenueRoomsManager } from '../venues/VenueRoomsManager'
 import { VenueFeesManager } from '../venues/VenueFeesManager'
@@ -36,7 +36,7 @@ export function EventsPage() {
   const [showVenueModal, setShowVenueModal] = useState(false)
   const [activeVenueId, setActiveVenueId] = useState<string | null>(null)
 
-  const emptyEventForm = { name: '', venue_id: '', description: '', starts_at: '', ends_at: '', dress_code: '', capacity: '', rsvp_deadline: '', public_visible: 'true' }
+  const emptyEventForm = { name: '', venue_id: '', description: '', starts_at: '', ends_at: '', dress_code: '', capacity: '', public_visible: 'true' }
   const [eventForm, setEventForm] = useState<Record<string, string>>(emptyEventForm)
 
   const emptyVenueForm = { name: '', address: '', contact_information: '', capacity: '', notes: '', image_id: '', distance_from_ktm_km: '', transportation_required: 'false', room_block_min: '', room_block_max: '' }
@@ -56,7 +56,6 @@ export function EventsPage() {
         if (!body.venue_id) delete body.venue_id
         if (!body.capacity) delete body.capacity; else body.capacity = Number(body.capacity)
         if (!body.ends_at) delete body.ends_at
-        if (!body.rsvp_deadline) delete body.rsvp_deadline
         await updateResource.mutateAsync({ resource: 'events', id: editEvent.id, body })
         toast.success('Event updated.')
         setEditEvent(null)
@@ -72,7 +71,6 @@ export function EventsPage() {
           venueId: eventForm.venue_id || null,
           startsAt: eventForm.starts_at,
           endsAt: eventForm.ends_at || null,
-          rsvpDeadline: eventForm.rsvp_deadline || null,
           publicVisible: eventForm.public_visible !== 'false',
         })
         toast.success('Event created.')
@@ -116,7 +114,6 @@ export function EventsPage() {
       ends_at: ev.ends_at ? ev.ends_at.slice(0, 16) : '',
       dress_code: ev.dress_code ?? '',
       capacity: ev.capacity?.toString() ?? '',
-      rsvp_deadline: ev.rsvp_deadline ? ev.rsvp_deadline.slice(0, 16) : '',
       public_visible: ev.public_visible === false ? 'false' : 'true',
     })
     setEditEvent(ev)
@@ -169,8 +166,7 @@ export function EventsPage() {
     { key: 'name', header: 'Event' },
     { key: 'starts_at', header: 'Starts', render: (r: Event) => fmtDateTime(r.starts_at) },
     { key: 'venue_name', header: 'Venue', render: (r: Event) => r.venue_name || '—' },
-    { key: 'capacity', header: 'Capacity', render: (r: Event) => r.capacity != null ? `${r.attending_count} / ${r.capacity}${r.waitlist_count > 0 ? ` (+${r.waitlist_count} waitlist)` : ''}` : `${r.attending_count} attending` },
-    { key: 'rsvp_deadline', header: 'RSVP Deadline', render: (r: Event) => fmtDate(r.rsvp_deadline) },
+    { key: 'capacity', header: 'Capacity', render: (r: Event) => r.capacity ?? '—' },
     { key: 'public_visible', header: 'On Site', render: (r: Event) => r.public_visible === false ? <Badge label="Hidden" className="bg-gray-100 text-gray-600" /> : <Badge label="Visible" className="bg-green-100 text-green-700" /> },
     {
       key: 'actions', header: '',
@@ -222,7 +218,6 @@ export function EventsPage() {
         <Field label="Dress Code"><Input value={eventForm.dress_code} onChange={setEventField('dress_code')} /></Field>
         <Field label="Capacity"><Input type="number" min="1" value={eventForm.capacity} onChange={setEventField('capacity')} /></Field>
       </div>
-      <Field label="RSVP Deadline"><Input type="datetime-local" value={eventForm.rsvp_deadline} onChange={setEventField('rsvp_deadline')} /></Field>
       <label className="flex items-center gap-2 text-sm text-gray-700">
         <input
           type="checkbox"

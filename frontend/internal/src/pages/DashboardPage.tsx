@@ -43,8 +43,8 @@ export function DashboardPage() {
         <StatCard label="Parties" value={data?.parties} icon={Users} color="bg-indigo-500" onClick={() => navigate('/parties')} />
         <StatCard label="Guests" value={data?.guests} icon={Users} color="bg-blue-500" onClick={() => navigate('/parties')} />
         <StatCard label="Events" value={data?.events} icon={Calendar} color="bg-green-500" onClick={() => navigate('/events')} />
-        <StatCard label="Attending" value={data?.attending} icon={CheckSquare} color="bg-teal-500" onClick={() => navigate('/rsvps')} />
-        <StatCard label="Pending RSVPs" value={data?.pendingRsvps} icon={Clock} color="bg-yellow-500" onClick={() => navigate('/rsvps')} />
+        <StatCard label="Attending" value={data?.attending} icon={CheckSquare} color="bg-teal-500" onClick={() => navigate('/parties')} />
+        <StatCard label="Pending RSVPs" value={data?.pendingRsvps} icon={Clock} color="bg-yellow-500" onClick={() => navigate('/parties')} />
         <StatCard label="Accommodation Requests" value={data?.openChangeRequests} icon={AlertCircle} color={data?.openChangeRequests ? 'bg-red-500' : 'bg-gray-400'} onClick={() => navigate('/accommodations')} />
       </div>
       {data?.openChangeRequests ? (

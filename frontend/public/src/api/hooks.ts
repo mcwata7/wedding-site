@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, API_BASE_URL } from './client'
-import type { SiteConfig, SitePage, ScheduleEvent, ThingToDoItem, FaqItem, TravelInfo } from './types'
+import type { SiteConfig, SitePage, ScheduleEvent, ThingToDoItem, FaqItem, TravelInfo, GuestParty, WeddingGuest } from './types'
 
 const BASE = '/api/v1/guest/site'
 
@@ -53,4 +53,17 @@ export function useFaq() {
 
 export function useTravelInfo() {
   return useQuery({ queryKey: ['site-travel'], queryFn: () => api.get<TravelInfo>(`${BASE}/travel`) })
+}
+
+export function useGuestParty(enabled = true) {
+  return useQuery({ queryKey: ['guest-party'], queryFn: () => api.get<GuestParty>('/api/v1/guest/party'), enabled })
+}
+
+export function useWeddingRsvp() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, status, note }: { id: string; status: string; note: string }) =>
+      api.put<WeddingGuest>(`/api/v1/guest/guests/${id}/rsvp`, { status, note }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['guest-party'] }),
+  })
 }

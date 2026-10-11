@@ -110,7 +110,7 @@ verification enabled; use the environment's supported proxy and trust setup.
   authenticate by name plus their party's verification answer. Printed
   invitation tokens are no longer login credentials. Backend authorization
   enforces roles and party scope; frontend route guards are only UX.
-- Preserve guest login throttling, planner overrides, RSVP capacity rules,
+- Preserve guest login throttling, planner overrides, wedding-wide guest RSVP semantics,
   and UTC storage with presentation in `Asia/Kathmandu`.
 - Disable outbound Slack notifications for local smoke tests with
   `WEDDING_SLACK_ENABLED=false`. The separate `rsvp-manager` live app needs

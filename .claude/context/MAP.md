@@ -21,10 +21,9 @@ GuestController.java | @RestController Base("/api/v1/guest")
 GuestController.java | Get("/accommodation") List<Map<String,Object>> accommodations(@AuthenticationPrincipal Principal p)
 GuestController.java | Get("/events") List<Map<String,Object>> events(@AuthenticationPrincipal Principal p)
 GuestController.java | Get("/party") Map<String,Object> party(@AuthenticationPrincipal Principal p)
-GuestController.java | Get("/rsvps") List<Map<String,Object>> rsvps(@AuthenticationPrincipal Principal p)
 GuestController.java | Patch("/guests/{id}") Map<String,Object> updateGuest(@AuthenticationPrincipal Principal p,@PathVariable UUID id,@RequestBody GuestUpdate 
 GuestController.java | Post("/accommodation/{id}/change-requests") Map<String,Object> request(@AuthenticationPrincipal Principal p,@PathVariable UUID id,@Valid 
-GuestController.java | Put("/rsvps/{id}") Map<String,Object> rsvp(@AuthenticationPrincipal Principal p,@PathVariable UUID id,@Valid @RequestBody RsvpUpdate in) 
+GuestController.java | Put("/guests/{id}/rsvp") Map<String,Object> rsvp(@AuthenticationPrincipal Principal p,@PathVariable UUID id,@Valid @RequestBody RsvpUpdat
 GuestImportController.java | @RestController Base("/api/v1/internal/guests")
 GuestImportController.java | Get(value="/import-template.csv",produces="text/csv") ResponseEntity<String> template()
 GuestImportController.java | Post(value="/import",consumes=MediaType.MULTIPART_FORM_DATA_VALUE) Map<String,Object> importCsv(@AuthenticationPrincipal Principal 
@@ -44,7 +43,7 @@ InternalController.java | Post("/site/travel-hotels") ResponseEntity<Map<String,
 InternalController.java | Post("/venues") ResponseEntity<Map<String,Object>> venue(@AuthenticationPrincipal Principal p,@RequestBody Map<String,Object> in)
 InternalController.java | Post("/venues/fees") ResponseEntity<Map<String,Object>> venueFee(@AuthenticationPrincipal Principal p,@RequestBody Map<String,Object> 
 InternalController.java | Post("/venues/rooms") ResponseEntity<Map<String,Object>> venueRoom(@AuthenticationPrincipal Principal p,@RequestBody Map<String,Object
-InternalController.java | Put("/rsvps/{id}") Map<String,Object> manualRsvp(@AuthenticationPrincipal Principal p,@PathVariable UUID id,@Valid @RequestBody Manual
+InternalController.java | Put("/guests/
 InternalDataController.java | @RestController Base("/api/v1/internal")
 InternalDataController.java | Get("/accommodations/assignments") List<Map<String,Object>> assignments()
 InternalDataController.java | Get("/accommodations/change-requests") List<Map<String,Object>> requests()
@@ -52,7 +51,6 @@ InternalDataController.java | Get("/dashboard") Map<String,Object> dashboard()
 InternalDataController.java | Get("/events") List<Map<String,Object>> events()
 InternalDataController.java | Get("/invitations") List<Map<String,Object>> invitations()
 InternalDataController.java | Get("/parties/{id}") Map<String,Object> party(@PathVariable UUID id)
-InternalDataController.java | Get("/rsvps") List<Map<String,Object>> rsvps(@RequestParam(required=false) UUID eventId) { var ps=new org.springframework.jdbc.cor
 InternalDataController.java | Get("/site/faq-items") List<Map<String,Object>> faqItems()
 InternalDataController.java | Get("/site/pages") List<Map<String,Object>> sitePages()
 InternalDataController.java | Get("/site/settings") Map<String,Object> siteSettings()
@@ -82,7 +80,7 @@ PlannerPasskeyController.java | Post("/internal/passkeys/enrollment") Map<String
 PlannerPasskeyController.java | Post("/internal/passkeys/register/finish") Map<String,Object> registrationFinish(@AuthenticationPrincipal Principal actor,@Valid
 PlannerPasskeyController.java | Post("/internal/passkeys/register/options") Map<String,Object> registrationOptions(@AuthenticationPrincipal Principal actor,@Val
 ReportController.java | @RestController Base("/api/v1/internal/reports")
-ReportController.java | Get(value="/attendance.csv",produces="text/csv") ResponseEntity<String> attendance(@RequestParam(required=false) UUID eventId)
+ReportController.java | Get(value="/attendance.csv",produces="text/csv") ResponseEntity<String> attendance()
 ReportController.java | Get(value="/dietary.csv",produces="text/csv") ResponseEntity<String> dietary()
 ReportController.java | Get(value="/guest-list.csv",produces="text/csv") ResponseEntity<String> guestList()
 ReportController.java | Get(value="/rooming.csv",produces="text/csv") ResponseEntity<String> rooming()
@@ -95,7 +93,7 @@ SiteController.java | Get("/travel") Map<String,Object> travel()
 
 ## Database schema (Flyway migrations)
 
-Latest migration: `V28__planner_passkeys.sql`
+Latest migration: `V29__guest_wedding_rsvp.sql`
 
 | Migration | Tables touched |
 |---|---|
@@ -126,6 +124,7 @@ Latest migration: `V28__planner_passkeys.sql`
 | V26__remove_party_email_and_phone.sql | party |
 | V27__label_colors.sql | site_settings |
 | V28__planner_passkeys.sql | planner_passkey,planner_passkey_challenge |
+| V29__guest_wedding_rsvp.sql | event_eligibility,guest,rsvp |
 
 ## Frontend apps
 
@@ -150,6 +149,7 @@ Latest migration: `V28__planner_passkeys.sql`
 - frontend/public/src/pages/FaqPage.tsx
 - frontend/public/src/pages/HomePage.tsx
 - frontend/public/src/pages/OnePage.tsx
+- frontend/public/src/pages/RsvpPage.tsx
 - frontend/public/src/pages/SchedulePage.tsx
 - frontend/public/src/pages/ThingsToDoPage.tsx
 - frontend/public/src/pages/TravelPage.tsx
@@ -236,6 +236,7 @@ Latest migration: `V28__planner_passkeys.sql`
 - frontend/public/src/pages/FaqPage.tsx
 - frontend/public/src/pages/HomePage.tsx
 - frontend/public/src/pages/OnePage.tsx
+- frontend/public/src/pages/RsvpPage.tsx
 - frontend/public/src/pages/SchedulePage.tsx
 - frontend/public/src/pages/ThingsToDoPage.tsx
 - frontend/public/src/pages/TravelPage.tsx

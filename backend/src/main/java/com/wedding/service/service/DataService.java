@@ -67,28 +67,4 @@ public class DataService {
     return upper;
   }
 
-  /** Every party attends every event -- there is no per-event invitation decision any more.
-   * `event_eligibility` is kept as a maintained invariant (all parties x all events, insert-only:
-   * archiving an event must not delete its rsvp rows, so nothing ever removes an eligibility row)
-   * rather than dropped, because `rsvp`'s composite FK to it is part of the data model. The
-   * guest-level rsvp rows are still a derived projection of (active guests) x (eligible events).
-   * Every path that changes either side -- adding a guest, archiving a guest, importing guests,
-   * creating a party, creating an event -- must call this so the projection stays in sync.
-   * Returns the number of rsvp rows actually inserted. */
-  public int syncRsvps() {
-    named.update(
-      "INSERT INTO event_eligibility(event_id,party_id) SELECT e.id,p.id FROM event e CROSS JOIN party p "
-      + "ON CONFLICT DO NOTHING", Map.of());
-    int inserted = named.update(
-      "INSERT INTO rsvp(guest_id,event_id,party_id) "
-      + "SELECT g.id, ee.event_id, g.party_id FROM guest g JOIN event_eligibility ee ON ee.party_id=g.party_id "
-      + "WHERE g.active "
-      + "ON CONFLICT (guest_id,event_id) DO NOTHING",
-      Map.of());
-    named.update(
-      "DELETE FROM rsvp r USING guest g WHERE g.id=r.guest_id "
-      + "AND (NOT g.active OR NOT EXISTS (SELECT 1 FROM event_eligibility ee WHERE ee.event_id=r.event_id AND ee.party_id=g.party_id))",
-      Map.of());
-    return inserted;
-  }
 }

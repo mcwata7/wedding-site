@@ -106,3 +106,17 @@ export interface GuestSession {
   accessToken: string
   tokenType: string
 }
+
+export interface WeddingGuest {
+  id: string
+  first_name: string
+  last_name: string
+  rsvp_status: 'ATTENDING' | 'DECLINED' | 'PENDING' | 'WAITLISTED'
+  rsvp_note?: string
+  rsvp_updated_at?: string
+}
+
+export interface GuestParty {
+  party: { id: string; display_name: string; mailing_address?: string }
+  guests: WeddingGuest[]
+}

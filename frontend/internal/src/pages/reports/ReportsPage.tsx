@@ -1,12 +1,8 @@
-import { useState } from 'react'
 import { FileDown } from 'lucide-react'
-import { useEvents } from '../../api/hooks'
 import { api } from '../../api/client'
-import { Button, PageHeader, Select, useToast } from '../../components'
+import { Button, PageHeader, useToast } from '../../components'
 
 export function ReportsPage() {
-  const { data: events } = useEvents()
-  const [eventId, setEventId] = useState('')
   const toast = useToast()
 
   const download = async (path: string, filename: string) => {
@@ -19,7 +15,7 @@ export function ReportsPage() {
   }
 
   const base = '/api/v1/internal/reports'
-  const attendancePath = `${base}/attendance.csv${eventId ? `?eventId=${eventId}` : ''}`
+  const attendancePath = `${base}/attendance.csv`
 
   return (
     <div>
@@ -28,17 +24,8 @@ export function ReportsPage() {
 
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h2 className="font-semibold text-gray-800 mb-1">Attendance Report</h2>
-          <p className="text-sm text-gray-500 mb-4">RSVP status for all attendees. Optionally filter by event.</p>
+          <p className="text-sm text-gray-500 mb-4">One wedding RSVP per guest.</p>
           <div className="flex gap-3 items-end">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-600 mb-1">Filter by event (optional)</label>
-              <Select
-                value={eventId}
-                onChange={setEventId}
-                placeholder="All events"
-                options={(events ?? []).map(e => ({ value: e.id, label: e.name }))}
-              />
-            </div>
             <Button onClick={() => download(attendancePath, 'attendance.csv')}>
               <FileDown size={14} /> Download
             </Button>

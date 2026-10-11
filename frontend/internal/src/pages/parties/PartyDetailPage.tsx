@@ -12,7 +12,7 @@ import {
 import { api, ApiRequestError } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import { fmtDateTime, statusColor } from '../../lib/format'
-import type { Guest, Rsvp } from '../../api/types'
+import type { Guest } from '../../api/types'
 
 const RSVP_STATUS_OPTIONS = [
   { value: 'ATTENDING', label: 'Attending' },
@@ -54,7 +54,7 @@ export function PartyDetailPage() {
   const [showAddGuest, setShowAddGuest] = useState(false)
   const [showQr, setShowQr] = useState<{ qrToken: string; expiresAt: string } | null>(null)
   const [showDelivery, setShowDelivery] = useState(false)
-  const [editRsvp, setEditRsvp] = useState<{ rsvp: Rsvp; guestName: string; eventName: string } | null>(null)
+  const [editRsvp, setEditRsvp] = useState<Guest | null>(null)
   const [rsvpForm, setRsvpForm] = useState({ status: '', note: '' })
 
   const [partyForm, setPartyForm] = useState({ display_name: '', mailing_address: '', verification_question: '', verification_answer: '' })
@@ -63,8 +63,6 @@ export function PartyDetailPage() {
 
   const party = data?.party
   const guests = data?.guests ?? []
-  const events = data?.events ?? []
-  const rsvps = data?.rsvps ?? []
 
   if (isLoading) return <LoadingSpinner />
   if (error || !party) return <ErrorMessage message={(error as Error)?.message ?? 'Party not found'} />
@@ -218,16 +216,16 @@ export function PartyDetailPage() {
     }
   }
 
-  const openEditRsvp = (rsvp: Rsvp, guestName: string, eventName: string) => {
-    setRsvpForm({ status: rsvp.status, note: rsvp.note ?? '' })
-    setEditRsvp({ rsvp, guestName, eventName })
+  const openEditRsvp = (guest: Guest) => {
+    setRsvpForm({ status: guest.rsvp_status, note: guest.rsvp_note ?? '' })
+    setEditRsvp(guest)
   }
 
   const saveRsvp = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editRsvp) return
     try {
-      await updateRsvp.mutateAsync({ id: editRsvp.rsvp.id, body: { status: rsvpForm.status, note: rsvpForm.note || undefined } })
+      await updateRsvp.mutateAsync({ id: editRsvp.id, body: { status: rsvpForm.status, note: rsvpForm.note || undefined } })
       toast.success('RSVP updated.')
       setEditRsvp(null)
     } catch (err) {
@@ -236,14 +234,15 @@ export function PartyDetailPage() {
   }
 
   const rsvpCounts = {
-    ATTENDING: rsvps.filter(r => r.status === 'ATTENDING').length,
-    DECLINED: rsvps.filter(r => r.status === 'DECLINED').length,
-    PENDING: rsvps.filter(r => r.status === 'PENDING').length,
-    WAITLISTED: rsvps.filter(r => r.status === 'WAITLISTED').length,
+    ATTENDING: guests.filter(g => g.rsvp_status === 'ATTENDING').length,
+    DECLINED: guests.filter(g => g.rsvp_status === 'DECLINED').length,
+    PENDING: guests.filter(g => g.rsvp_status === 'PENDING').length,
+    WAITLISTED: guests.filter(g => g.rsvp_status === 'WAITLISTED').length,
   }
 
   const guestColumns = [
     { key: 'name', header: 'Name', render: (g: Guest) => `${g.first_name} ${g.last_name}` },
+    { key: 'rsvp_status', header: 'Wedding RSVP', render: (g: Guest) => <Badge label={g.rsvp_status} className={statusColor(g.rsvp_status)} /> },
     { key: 'email', header: 'Email', render: (g: Guest) => g.email || '—' },
     { key: 'dietary_requirements', header: 'Dietary', render: (g: Guest) => g.dietary_requirements || '—' },
     { key: 'is_additional_guest', header: 'Type', render: (g: Guest) => g.is_additional_guest ? <Badge label="Additional" className="bg-yellow-100 text-yellow-700" /> : <Badge label="Primary" className="bg-blue-100 text-blue-700" /> },
@@ -348,11 +347,11 @@ export function PartyDetailPage() {
         <Table columns={guestColumns} rows={guests} />
       </div>
 
-      {/* Invitations & RSVPs */}
+      {/* One wedding-wide response per guest. */}
       <div className="mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-semibold text-gray-800">RSVPs</h2>
-          <div className="flex gap-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <h2 className="text-lg font-semibold text-gray-800">Wedding RSVPs</h2>
+          <div className="flex flex-wrap gap-3 text-sm">
             {Object.entries(rsvpCounts).map(([status, count]) => (
               <div key={status} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${statusColor(status)}`}>
                 <span className="font-semibold">{count}</span> {status.charAt(0) + status.slice(1).toLowerCase()}
@@ -360,45 +359,16 @@ export function PartyDetailPage() {
             ))}
           </div>
         </div>
-        {events.length === 0 ? (
-          <p className="text-sm text-gray-500">No events have been created yet.</p>
-        ) : (
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left px-3 py-2 font-medium text-gray-500">Guest</th>
-                  {events.map(ev => (
-                    <th key={ev.id} className="text-left px-3 py-2 font-medium text-gray-500 whitespace-nowrap">
-                      {ev.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {guests.map(g => (
-                  <tr key={g.id} className="border-t border-gray-100">
-                    <td className="px-3 py-2 whitespace-nowrap">{g.first_name} {g.last_name}</td>
-                    {events.map(ev => {
-                      const rsvp = rsvps.find(r => r.guest_id === g.id && r.event_id === ev.id)
-                      return (
-                        <td key={ev.id} className="px-3 py-2">
-                          {rsvp ? (
-                            <button onClick={() => openEditRsvp(rsvp, `${g.first_name} ${g.last_name}`, ev.name)}>
-                              <Badge label={rsvp.status} className={statusColor(rsvp.status)} />
-                            </button>
-                          ) : (
-                            <span className="text-gray-300">—</span>
-                          )}
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <Table columns={[
+          { key: 'name', header: 'Guest', render: (g: Guest) => `${g.first_name} ${g.last_name}` },
+          { key: 'rsvp_status', header: 'Wedding RSVP', render: (g: Guest) => (
+            <button onClick={() => openEditRsvp(g)} aria-label={`Edit wedding RSVP for ${g.first_name} ${g.last_name}`}>
+              <Badge label={g.rsvp_status} className={statusColor(g.rsvp_status)} />
+            </button>
+          ) },
+          { key: 'rsvp_note', header: 'Note', render: (g: Guest) => g.rsvp_note || '—' },
+          { key: 'rsvp_source', header: 'Recorded by', render: (g: Guest) => g.rsvp_source || '—' },
+        ]} rows={guests} />
       </div>
 
       {/* Edit Party Modal */}
@@ -579,11 +549,11 @@ export function PartyDetailPage() {
       </Modal>
 
       {/* Edit RSVP Modal */}
-      <Modal open={!!editRsvp} onClose={() => setEditRsvp(null)} title={editRsvp ? `Edit RSVP — ${editRsvp.guestName}` : ''}>
+      <Modal open={!!editRsvp} onClose={() => setEditRsvp(null)} title={editRsvp ? `Edit RSVP — ${editRsvp.first_name} ${editRsvp.last_name}` : ''}>
         {editRsvp && (
           <form onSubmit={saveRsvp} className="space-y-3">
             <div className="text-sm text-gray-600">
-              <strong>Event:</strong> {editRsvp.eventName}
+              One response for the entire wedding.
             </div>
             <Field label="Status" required>
               <Select

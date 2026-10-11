@@ -22,21 +22,21 @@ public class SlackNotifier {
 
   SlackNotifier(DataService db, AppProperties props) { this.db = db; this.props = props; }
 
-  public void rsvpRecorded(UUID rsvpId) {
+  public void rsvpRecorded(UUID guestId) {
     if (!enabled()) return;
     try {
       var rows = db.many(
-        "SELECT g.first_name, g.last_name, p.display_name party_name, r.status, r.note "
-        + "FROM rsvp r JOIN guest g ON g.id=r.guest_id JOIN party p ON p.id=r.party_id "
-        + "WHERE r.id=:id",
-        Map.of("id", rsvpId));
+        "SELECT g.first_name, g.last_name, p.display_name party_name, g.rsvp_status status, g.rsvp_note note "
+        + "FROM guest g JOIN party p ON p.id=g.party_id "
+        + "WHERE g.id=:id",
+        Map.of("id", guestId));
       if (rows.isEmpty()) return;
       var row = rows.getFirst();
       String name = row.get("first_name") + " " + row.get("last_name");
       String partyName = (String) row.get("party_name");
       String status = (String) row.get("status");
       String note = (String) row.get("note");
-      Runnable post = () -> post(rsvpId, buildPayload(name, partyName, status, note));
+      Runnable post = () -> post(guestId, buildPayload(name, partyName, status, note));
       if (TransactionSynchronizationManager.isSynchronizationActive()) {
         // Post only after the RSVP actually commits -- otherwise a later rollback would leave a
         // Slack message announcing an RSVP that never happened.
@@ -47,18 +47,18 @@ public class SlackNotifier {
         post.run();
       }
     } catch (Exception e) {
-      log.error("Failed to prepare Slack RSVP notification for rsvp {}", rsvpId, e);
+      log.error("Failed to prepare Slack RSVP notification for guest {}", guestId, e);
     }
   }
 
-  private void post(UUID rsvpId, Map<String,Object> payload) {
+  private void post(UUID guestId, Map<String,Object> payload) {
     try {
       client.post().uri(props.slack().webhookUrl())
         .header("Content-Type", "application/json")
         .body(payload)
         .retrieve().toBodilessEntity();
     } catch (Exception e) {
-      log.error("Slack RSVP notification failed for rsvp {}", rsvpId, e);
+      log.error("Slack RSVP notification failed for guest {}", guestId, e);
     }
   }
 

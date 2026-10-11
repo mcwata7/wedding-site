@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-11 — One wedding RSVP stored on each guest
+**Context:** Guests should respond for the entire wedding rather than separately for every event.
+**Decision:** Store status, note, source and response timestamp on `guest`. Remove event-derived RSVP creation and filtering; keep party-scoped guest responses, audited planner overrides, and after-commit Slack notifications. Event capacities remain planning metadata and event deadlines no longer gate wedding responses; accommodation limits are unchanged. Migration V29 consolidates matching non-pending responses, uses the most recent matching response metadata, and leaves conflicts pending with a confirmation note. Preserve all event responses and eligibility rows in history tables rather than deleting them.
+**Rejected:** Choosing an arbitrary event response for conflicting data would silently invent a wedding answer. Keeping live event rows would duplicate the attendance source of truth and keep event creation coupled to responding.
+
 ## 2026-10-11 — Additional passkeys from a signed-in planner session
 **Context:** Planners need to enroll a second device after login, including when they signed in with an existing passkey.
 **Decision:** Add a protected Passkeys page and an enrollment-proof endpoint that checks the JWT owner’s password without changing their session. Offer cross-platform attachment for another device/security key and unrestricted attachment for local setup. Use the browser’s native QR/Bluetooth or security-key flow and preserve all existing credentials.

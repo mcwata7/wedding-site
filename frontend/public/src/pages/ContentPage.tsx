@@ -3,7 +3,7 @@ import { useSiteConfig, siteMediaUrl } from '../api/hooks'
 import { LoadingSpinner, ErrorMessage, PageHeading, PageBanner } from '../components'
 import { ApiRequestError } from '../api/client'
 
-/** Renders any visible site_page without a dedicated page component (currently just RSVP)
+/** Renders any visible site_page without a dedicated page component
  * with zero code changes — just heading + body text. Takes an optional `slug` so the
  * single-page composite can render a generic section (its slug already known from config)
  * without going through the route param this component also serves as `/:slug`. */

@@ -9,6 +9,7 @@ import { TravelPage } from './pages/TravelPage'
 import { ThingsToDoPage } from './pages/ThingsToDoPage'
 import { FaqPage } from './pages/FaqPage'
 import { ContentPage } from './pages/ContentPage'
+import { RsvpPage } from './pages/RsvpPage'
 import { OnePage } from './pages/OnePage'
 import { LoadingSpinner, ScrollToTopButton } from './components'
 import { useSiteConfig, useSiteLayout, useSectionPages, ROUTED_SLUGS } from './api/hooks'
@@ -141,7 +142,7 @@ export default function App() {
                 <Routes>
                   <Route path="contact-info" element={<ContactInfoPage />} />
                   <Route index element={<OnePage />} />
-                  <Route path="rsvp" element={<ContentPage slug="rsvp" />} />
+                  <Route path="rsvp" element={<RsvpPage />} />
                   <Route path="*" element={<SectionRedirect />} />
                 </Routes>
               ) : (
@@ -152,6 +153,7 @@ export default function App() {
                   <Route path="travel" element={<TravelPage />} />
                   <Route path="things-to-do" element={<ThingsToDoPage />} />
                   <Route path="faq" element={<FaqPage />} />
+                  <Route path="rsvp" element={<RsvpPage />} />
                   <Route path=":slug" element={<ContentPage />} />
                 </Routes>
               )}

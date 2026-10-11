@@ -59,6 +59,10 @@ export interface Guest {
   room_number?: string
   room_venue_name?: string
   invite_round?: number
+  rsvp_status: 'ATTENDING' | 'DECLINED' | 'PENDING' | 'WAITLISTED'
+  rsvp_note?: string
+  rsvp_source?: 'GUEST' | 'PLANNER'
+  rsvp_updated_at?: string
   active: boolean
   created_at: string
 }
@@ -73,9 +77,6 @@ export interface Event {
   ends_at?: string
   dress_code?: string
   capacity?: number
-  rsvp_deadline?: string
-  attending_count: number
-  waitlist_count: number
   public_visible: boolean
   archived: boolean
 }
@@ -125,22 +126,6 @@ export interface VenueFee {
   amount?: number
   notes?: string
   archived: boolean
-}
-
-export interface Rsvp {
-  id: string
-  guest_id: string
-  event_id: string
-  party_id: string
-  first_name: string
-  last_name: string
-  party_name?: string
-  event_name?: string
-  status: 'ATTENDING' | 'DECLINED' | 'PENDING' | 'WAITLISTED'
-  note?: string
-  source?: string
-  created_at: string
-  updated_at: string
 }
 
 export interface AccommodationAssignment {

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './client'
 import type {
-  Dashboard, Party, PartyDetail, Guest, Event, Venue, VenueRoom, VenueRoomWithVenue, VenueFee, Rsvp,
+  Dashboard, Party, PartyDetail, Guest, Event, Venue, VenueRoom, VenueRoomWithVenue, VenueFee,
   AccommodationAssignment,
   ChangeRequest, ImportResult, SiteSettings, SitePage, ThingToDoItem, FaqItem, TravelHotel, TravelFlight, MediaAsset,
   InvitationCardRow,
@@ -25,7 +25,7 @@ export function useParties(q?: string) {
 export function useParty(id: string) {
   return useQuery({
     queryKey: ['parties', id],
-    queryFn: () => api.get<{ party: PartyDetail; guests: Guest[]; events: Event[]; rsvps: Rsvp[] }>(`${BASE}/parties/${id}`),
+    queryFn: () => api.get<{ party: PartyDetail; guests: Guest[] }>(`${BASE}/parties/${id}`),
     enabled: !!id,
   })
 }
@@ -166,9 +166,9 @@ export function useUpdateRsvp() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: ({ id, body }: { id: string; body: { status: string; note?: string } }) =>
-      api.put<Rsvp>(`${BASE}/rsvps/${id}`, body),
+      api.put<Guest>(`${BASE}/guests/${id}/rsvp`, body),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['rsvps'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
       qc.invalidateQueries({ queryKey: ['parties'] })
     },
   })

@@ -25,7 +25,7 @@ public class InternalDataController {
     Map.entry("parties", Set.of("display_name","mailing_address","verification_question")),
     Map.entry("guests", Set.of("first_name","last_name","relationship_group","email","phone","dietary_requirements","accessibility_needs","travel_origin","flight_number","planner_notes","is_additional_guest","wedding_side","attendance_probability","is_wedding_party","passport","is_ktm_resident","is_child","room_assignment_id","invite_round")),
     Map.entry("venues", Set.of("name","address","contact_information","capacity","notes","distance_from_ktm_km","transportation_required","room_block_min","room_block_max","image_id")),
-    Map.entry("events", Set.of("name","venue_id","description","starts_at","ends_at","dress_code","capacity","rsvp_deadline","public_visible")),
+    Map.entry("events", Set.of("name","venue_id","description","starts_at","ends_at","dress_code","capacity","public_visible")),
     Map.entry("venue-rooms", Set.of("room_type","room_number","capacity","max_available","nepali_rate","foreigner_rate","notes")),
     Map.entry("venue-fees", Set.of("fee_type","amount","notes")),
     Map.entry("site-pages", Set.of("label","heading","sort_order","visible","body","image_id")),
@@ -36,7 +36,7 @@ public class InternalDataController {
 
   @GetMapping("/dashboard") Map<String,Object> dashboard() {
     return Map.of("parties", count("party WHERE NOT archived"), "guests", count("guest WHERE active"), "events", count("event WHERE NOT archived"),
-      "attending", count("rsvp WHERE status='ATTENDING'"), "pendingRsvps", count("rsvp WHERE status='PENDING'"), "openChangeRequests", count("accommodation_change_request WHERE status='OPEN'"));
+      "attending", count("guest g JOIN party p ON p.id=g.party_id WHERE g.active AND NOT p.archived AND g.rsvp_status='ATTENDING'"), "pendingRsvps", count("guest g JOIN party p ON p.id=g.party_id WHERE g.active AND NOT p.archived AND g.rsvp_status='PENDING'"), "openChangeRequests", count("accommodation_change_request WHERE status='OPEN'"));
   }
   @GetMapping("/venues") List<Map<String,Object>> venues() { return list("SELECT v.*,"
     + "(SELECT coalesce(sum(max_available),0) FROM venue_room r WHERE r.venue_id=v.id AND NOT r.archived) room_block_rooms,"
@@ -51,12 +51,9 @@ public class InternalDataController {
       + "CASE WHEN t.locked_until>now() THEN t.locked_until END login_locked_until"
       + " FROM party p LEFT JOIN invitation i ON i.party_id=p.id LEFT JOIN guest_login_throttle t ON t.party_id=p.id WHERE p.id=:id",Map.of("id",id));
     var guests=db.many("SELECT g.*,r.room_number,v.name room_venue_name FROM guest g LEFT JOIN venue_room r ON r.id=g.room_assignment_id LEFT JOIN venue v ON v.id=r.venue_id WHERE g.party_id=:id AND g.active ORDER BY g.created_at",Map.of("id",id));
-    var events=db.many("SELECT e.* FROM event e WHERE NOT e.archived ORDER BY e.starts_at",Map.of());
-    var rsvps=db.many("SELECT r.*,g.first_name,g.last_name FROM rsvp r JOIN guest g ON g.id=r.guest_id WHERE r.party_id=:id",Map.of("id",id));
-    return Map.of("party",withoutPartyAnswer(party),"guests",guests,"events",events,"rsvps",rsvps);
+    return Map.of("party",withoutPartyAnswer(party),"guests",guests);
   }
-  @GetMapping("/events") List<Map<String,Object>> events() { return list("SELECT e.*,v.name venue_name, count(r.id) FILTER (WHERE r.status='ATTENDING') attending_count, count(r.id) FILTER (WHERE r.status='WAITLISTED') waitlist_count FROM event e LEFT JOIN venue v ON v.id=e.venue_id LEFT JOIN rsvp r ON r.event_id=e.id WHERE NOT e.archived GROUP BY e.id,v.name ORDER BY e.starts_at"); }
-  @GetMapping("/rsvps") List<Map<String,Object>> rsvps(@RequestParam(required=false) UUID eventId) { var ps=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource(); String sql="SELECT r.*,g.first_name,g.last_name,p.display_name party_name,e.name event_name FROM rsvp r JOIN guest g ON g.id=r.guest_id JOIN party p ON p.id=g.party_id JOIN event e ON e.id=r.event_id"; if(eventId!=null){sql+=" WHERE r.event_id=:eventId";ps.addValue("eventId",eventId);} return db.named.queryForList(sql+" ORDER BY e.starts_at,p.display_name,g.last_name",ps); }
+  @GetMapping("/events") List<Map<String,Object>> events() { return list("SELECT e.*,v.name venue_name FROM event e LEFT JOIN venue v ON v.id=e.venue_id WHERE NOT e.archived ORDER BY e.starts_at"); }
   @GetMapping("/accommodations/assignments") List<Map<String,Object>> assignments() { return list("SELECT a.*,r.room_number,v.name venue_name,coalesce(pa.display_name, g.first_name||' '||g.last_name) assignee FROM accommodation_assignment a JOIN venue_room r ON r.id=a.room_id JOIN venue v ON v.id=r.venue_id LEFT JOIN party pa ON pa.id=a.party_id LEFT JOIN guest g ON g.id=a.guest_id ORDER BY a.check_in,v.name,r.room_number"); }
   @GetMapping("/accommodations/change-requests") List<Map<String,Object>> requests() { return list("SELECT c.*,p.display_name party_name FROM accommodation_change_request c JOIN party p ON p.id=c.party_id ORDER BY c.created_at DESC"); }
   @GetMapping("/site/settings") Map<String,Object> siteSettings() { return db.one("SELECT * FROM site_settings WHERE singleton", Map.of()); }
@@ -233,7 +230,6 @@ public class InternalDataController {
   @PostMapping("/resources/{resource}/{id}/archive") Map<String,Object> archive(@AuthenticationPrincipal Principal actor,@PathVariable String resource,@PathVariable UUID id) {
     String table=table(resource); Map<String,Object> before=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); String field="guest".equals(table)?"active":"archived"; String value="guest".equals(table)?"false":"true";
     db.named.update("UPDATE "+table+" SET "+field+"="+value+" WHERE id=:id",Map.of("id",id));
-    if("guest".equals(table)) db.syncRsvps();
     Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); if("party".equals(table)) { before=withoutPartyAnswer(before); after=withoutPartyAnswer(after); } db.audit(actor.id(),"ARCHIVE",table.toUpperCase(),id,before,after); return after;
   }
   @PostMapping("/accommodations/change-requests/{id}/{action}") Map<String,Object> resolve(@AuthenticationPrincipal Principal actor,@PathVariable UUID id,@PathVariable String action) {
