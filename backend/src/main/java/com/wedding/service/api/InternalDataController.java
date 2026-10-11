@@ -8,6 +8,7 @@ import java.util.*;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 
 /** Read and lifecycle endpoints used by the planner application. */
 @RestController @RequestMapping("/api/v1/internal")
@@ -52,7 +53,7 @@ public class InternalDataController {
     var guests=db.many("SELECT g.*,r.room_number,v.name room_venue_name FROM guest g LEFT JOIN venue_room r ON r.id=g.room_assignment_id LEFT JOIN venue v ON v.id=r.venue_id WHERE g.party_id=:id AND g.active ORDER BY g.created_at",Map.of("id",id));
     var events=db.many("SELECT e.* FROM event e WHERE NOT e.archived ORDER BY e.starts_at",Map.of());
     var rsvps=db.many("SELECT r.*,g.first_name,g.last_name FROM rsvp r JOIN guest g ON g.id=r.guest_id WHERE r.party_id=:id",Map.of("id",id));
-    return Map.of("party",party,"guests",guests,"events",events,"rsvps",rsvps);
+    return Map.of("party",withoutPartyAnswer(party),"guests",guests,"events",events,"rsvps",rsvps);
   }
   @GetMapping("/events") List<Map<String,Object>> events() { return list("SELECT e.*,v.name venue_name, count(r.id) FILTER (WHERE r.status='ATTENDING') attending_count, count(r.id) FILTER (WHERE r.status='WAITLISTED') waitlist_count FROM event e LEFT JOIN venue v ON v.id=e.venue_id LEFT JOIN rsvp r ON r.event_id=e.id WHERE NOT e.archived GROUP BY e.id,v.name ORDER BY e.starts_at"); }
   @GetMapping("/rsvps") List<Map<String,Object>> rsvps(@RequestParam(required=false) UUID eventId) { var ps=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource(); String sql="SELECT r.*,g.first_name,g.last_name,p.display_name party_name,e.name event_name FROM rsvp r JOIN guest g ON g.id=r.guest_id JOIN party p ON p.id=g.party_id JOIN event e ON e.id=r.event_id"; if(eventId!=null){sql+=" WHERE r.event_id=:eventId";ps.addValue("eventId",eventId);} return db.named.queryForList(sql+" ORDER BY e.starts_at,p.display_name,g.last_name",ps); }
@@ -205,22 +206,42 @@ public class InternalDataController {
     return Boolean.parseBoolean(value.toString());
   }
 
-  @PatchMapping("/resources/{resource}/{id}") Map<String,Object> update(@AuthenticationPrincipal Principal actor,@PathVariable String resource,@PathVariable UUID id,@RequestBody Map<String,Object> input) {
+  @PatchMapping("/resources/{resource}/{id}") @Transactional Map<String,Object> update(@AuthenticationPrincipal Principal actor,@PathVariable String resource,@PathVariable UUID id,@RequestBody Map<String,Object> input) {
     String table=table(resource); Set<String> allowed=COLUMNS.get(resource); var updates=input.entrySet().stream().filter(e->allowed.contains(e.getKey())).toList();
-    if(updates.isEmpty()) throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","No editable fields were provided");
+    String answer=null;
+    if ("party".equals(table) && input.get("verification_answer") != null) {
+      if (!(input.get("verification_answer") instanceof String value))
+        throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Verification answer must be text");
+      if (!value.isBlank()) {
+        answer=value.trim().toLowerCase(Locale.ROOT);
+        if (answer.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72)
+          throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Verification answer must be at most 72 bytes");
+      }
+    }
+    if(updates.isEmpty() && answer==null) throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","No editable fields were provided");
     Map<String,Object> before=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); var params=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("id",id); List<String> setters=new ArrayList<>(); for(var e:updates){setters.add(e.getKey()+"=:"+e.getKey());params.addValue(e.getKey(),db.checkEnum(e.getKey(),db.coerceUuidLike(e.getKey(),e.getValue())));}
+    if(answer!=null) { setters.add("verification_answer_hash=:answerHash"); params.addValue("answerHash",db.passwords.encode(answer)); }
     if(Set.of("venue","event","site_page","thing_to_do_item","venue_room","venue_fee","faq_item","travel_hotel","travel_flight").contains(table)) setters.add("updated_at=now()");
-    db.named.update("UPDATE "+table+" SET "+String.join(",",setters)+" WHERE id=:id",params); Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); db.audit(actor.id(),"UPDATE",table.toUpperCase(),id,before,after); return after;
+    db.named.update("UPDATE "+table+" SET "+String.join(",",setters)+" WHERE id=:id",params); Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); if("party".equals(table)) {
+      before=withoutPartyAnswer(before); after=withoutPartyAnswer(after);
+      var auditAfter=new LinkedHashMap<>(after);
+      auditAfter.put("verification_answer_changed",answer!=null);
+      db.audit(actor.id(),"UPDATE",table.toUpperCase(),id,before,auditAfter);
+    } else db.audit(actor.id(),"UPDATE",table.toUpperCase(),id,before,after);
+    return after;
   }
   @PostMapping("/resources/{resource}/{id}/archive") Map<String,Object> archive(@AuthenticationPrincipal Principal actor,@PathVariable String resource,@PathVariable UUID id) {
     String table=table(resource); Map<String,Object> before=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); String field="guest".equals(table)?"active":"archived"; String value="guest".equals(table)?"false":"true";
     db.named.update("UPDATE "+table+" SET "+field+"="+value+" WHERE id=:id",Map.of("id",id));
     if("guest".equals(table)) db.syncRsvps();
-    Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); db.audit(actor.id(),"ARCHIVE",table.toUpperCase(),id,before,after); return after;
+    Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); if("party".equals(table)) { before=withoutPartyAnswer(before); after=withoutPartyAnswer(after); } db.audit(actor.id(),"ARCHIVE",table.toUpperCase(),id,before,after); return after;
   }
   @PostMapping("/accommodations/change-requests/{id}/{action}") Map<String,Object> resolve(@AuthenticationPrincipal Principal actor,@PathVariable UUID id,@PathVariable String action) {
     String status=switch(action){case "resolve"->"RESOLVED";case "decline"->"DECLINED";default->throw new ApiException(HttpStatus.BAD_REQUEST,"INVALID_ACTION","Action must be resolve or decline");};
     db.named.update("UPDATE accommodation_change_request SET status=:s WHERE id=:id",Map.of("s",status,"id",id)); Map<String,Object> result=db.one("SELECT * FROM accommodation_change_request WHERE id=:id",Map.of("id",id));db.audit(actor.id(),status,"ACCOMMODATION_CHANGE_REQUEST",id,null,result);return result;
+  }
+  private static Map<String,Object> withoutPartyAnswer(Map<String,Object> party) {
+    var safe=new LinkedHashMap<>(party); safe.remove("verification_answer_hash"); return safe;
   }
   private int count(String target){return db.jdbc.queryForObject("SELECT count(*) FROM "+target,Integer.class);}
   private List<Map<String,Object>> list(String sql){return db.many(sql,Map.of());}

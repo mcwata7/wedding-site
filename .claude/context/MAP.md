@@ -62,7 +62,7 @@ InternalDataController.java | Get("/site/travel-hotels") List<Map<String,Object>
 InternalDataController.java | Get("/venues") List<Map<String,Object>> venues()
 InternalDataController.java | Get("/venues/rooms") List<Map<String,Object>> allVenueRooms()
 InternalDataController.java | Get("/venues/{id}") Map<String,Object> venue(@PathVariable UUID id)
-InternalDataController.java | Patch("/resources/{resource}/{id}") Map<String,Object> update(@AuthenticationPrincipal Principal actor,@PathVariable String resour
+InternalDataController.java | Patch("/resources/{resource}/{id}") @Transactional Map<String,Object> update(@AuthenticationPrincipal Principal actor,@PathVariabl
 InternalDataController.java | Patch("/site/settings") Map<String,Object> updateSiteSettings(@AuthenticationPrincipal Principal actor,@RequestBody Map<String,Obj
 InternalDataController.java | Post("/accommodations/change-requests/{id}/{action}") Map<String,Object> resolve(@AuthenticationPrincipal Principal actor,@PathVar
 InternalDataController.java | Post("/resources/{resource}/{id}/archive") Map<String,Object> archive(@AuthenticationPrincipal Principal actor,@PathVariable Strin

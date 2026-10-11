@@ -57,7 +57,7 @@ export function PartyDetailPage() {
   const [editRsvp, setEditRsvp] = useState<{ rsvp: Rsvp; guestName: string; eventName: string } | null>(null)
   const [rsvpForm, setRsvpForm] = useState({ status: '', note: '' })
 
-  const [partyForm, setPartyForm] = useState({ display_name: '', mailing_address: '', verification_question: '' })
+  const [partyForm, setPartyForm] = useState({ display_name: '', mailing_address: '', verification_question: '', verification_answer: '' })
   const [guestForm, setGuestForm] = useState<Record<string, string>>({})
   const [deliveryForm, setDeliveryForm] = useState({ kind: 'DELIVERY', note: '' })
 
@@ -74,6 +74,7 @@ export function PartyDetailPage() {
       display_name: party.display_name,
       mailing_address: party.mailing_address ?? '',
       verification_question: party.verification_question ?? '',
+      verification_answer: '',
     })
     setEditParty(true)
   }
@@ -82,6 +83,7 @@ export function PartyDetailPage() {
     e.preventDefault()
     try {
       await updateResource.mutateAsync({ resource: 'parties', id: id!, body: partyForm })
+      setPartyForm(f => ({ ...f, verification_answer: '' }))
       toast.success('Party updated.')
       setEditParty(false)
     } catch (err) {
@@ -407,6 +409,10 @@ export function PartyDetailPage() {
               <Input value={partyForm[k]} onChange={e => setPartyForm(f => ({ ...f, [k]: e.target.value }))} />
             </Field>
           ))}
+          <Field label="New Verification Answer">
+            <Input type="password" autoComplete="new-password" aria-label="New Verification Answer" value={partyForm.verification_answer} onChange={e => setPartyForm(f => ({ ...f, verification_answer: e.target.value }))} />
+            <p className="mt-1 text-xs text-gray-500">Leave blank to keep the current answer.</p>
+          </Field>
           <Field label="Mailing Address"><TextArea maxLength={2000} value={partyForm.mailing_address} onChange={e => setPartyForm(f => ({ ...f, mailing_address: e.target.value }))} /></Field>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="secondary" type="button" onClick={() => setEditParty(false)}>Cancel</Button>

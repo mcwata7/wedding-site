@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-10 — Write-only verification answer replacement
+**Context:** Planners need to revise the shared party login answer without viewing the current value.
+**Decision:** Accept a virtual answer field through the existing party PATCH, hash it server-side, and preserve the current answer for blank input. Redact hashes from party responses and audits, recording only whether an answer changed. Keep existing sessions and brute-force lockouts unchanged.
+**Rejected:** Returning the stored hash or answer to fill the form, and treating blank input as deletion, would expose credential material or accidentally remove guest access.
+
 
 ## 2026-10-09 — Separate section-label and schedule-date colors
 **Context:** Small accent-colored section labels and event dates can become
