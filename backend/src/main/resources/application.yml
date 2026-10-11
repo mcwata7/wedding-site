@@ -25,6 +25,9 @@ wedding:
     # point (guests would re-answer the verification question every couple of hours).
     guest-session-minutes: 43200
     planner-session-minutes: 480
+  passkeys:
+    # Exact planner frontend origins, not the API or guest website. RP ID is each origin’s hostname.
+    allowed-origins: ${WEDDING_PASSKEY_ALLOWED_ORIGINS:http://localhost:3000}
   bootstrap-admin:
     email: ${WEDDING_BOOTSTRAP_ADMIN_EMAIL:${ADMIN_EMAIL:admin@example.com}}
     password: ${WEDDING_BOOTSTRAP_ADMIN_PASSWORD:${ADMIN_PASSWORD:change-me-before-sharing}}

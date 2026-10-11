@@ -44,7 +44,7 @@ async function rawRequest(path: string, init: RequestInit = {}): Promise<Respons
 
   const res = await fetch(`${API_BASE_URL}${path}`, { ...init, headers })
 
-  if (res.status === 401) {
+  if (res.status === 401 && !path.startsWith('/api/v1/auth/')) {
     _onUnauthorized?.()
     throw new ApiRequestError('UNAUTHORIZED', 'Session expired. Please log in again.', 401)
   }

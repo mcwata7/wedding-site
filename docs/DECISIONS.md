@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-11 — Planner passkeys with password fallback
+**Context:** Planners should enroll a passkey after password login and prefer it on later sign-ins, while retaining password access.
+**Decision:** Use Yubico server verification and SimpleWebAuthn’s browser adapter. Persist five-minute, single-use ceremony requests in PostgreSQL; require device verification and a recent, account-bound password enrollment proof. Prompt setup again after skipping. Bind credentials to each allowlisted planner hostname, including separate Firebase aliases, and keep password fallback available.
+**Rejected:** Hand-written signature/attestation verification, trusting a browser “success” response, or registering with only an old eight-hour JWT would weaken credential validation. In-memory challenges would break across restarts or instances. A shared RP ID across `web.app` and `firebaseapp.com` cannot work, and deriving trust from an arbitrary request origin would permit untrusted enrollment.
+
 ## 2026-10-10 — Write-only verification answer replacement
 **Context:** Planners need to revise the shared party login answer without viewing the current value.
 **Decision:** Accept a virtual answer field through the existing party PATCH, hash it server-side, and preserve the current answer for blank input. Redact hashes from party responses and audits, recording only whether an answer changed. Keep existing sessions and brute-force lockouts unchanged.

@@ -43,7 +43,11 @@ Each item corresponds to a route in `src/App.tsx` and a page in `src/pages/`.
 
 ### 5.1 Login (`/login`)
 
-Email/password form posts to `POST /api/v1/auth/planner/login`. On success, the returned JWT is handed to `AuthContext` and the planner is routed to the dashboard. There is no "remember me" — the banner explicitly tells the planner the session ends when the tab closes.
+An email-first form calls `POST /api/v1/auth/planner/passkeys/login/options`. If the account has a passkey on this hostname, the next screen offers **Sign in with passkey** and **Use password instead**. Otherwise it shows the password form, which posts to `POST /api/v1/auth/planner/login`. Invalid login credentials display the API’s error without being relabeled as an expired session.
+
+After password login, `hasPasskey=false` opens a setup prompt. **Set up passkey** uses `@simplewebauthn/browser` to call the browser’s WebAuthn API with server-generated registration options, then submits the response for verification. **Not now** continues to the dashboard without suppressing the prompt on future logins. Cancelled/failed ceremonies keep retry and password/skip choices available; unsupported browsers can use passwords and skip setup. Enrollment proof stays in component memory and is cleared on setup or skip.
+
+`src/auth/passkeys.ts` keeps the ceremony calls and supported-browser/error handling together, using the shared API client. Every passkey attempt fetches a fresh challenge. Successful authentication hands the returned JWT to `AuthContext`; tokens remain memory-only, with no “remember me.” Refreshing or closing the tab signs the planner out. Local passkey testing must use `http://localhost:3000`, not a numeric IP. Credentials belong to the planner hostname, so Firebase aliases have separate setup.
 
 ### 5.2 Dashboard (`/`)
 

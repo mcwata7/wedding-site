@@ -4,6 +4,7 @@ import com.wedding.service.config.AppProperties;
 import com.wedding.service.security.JwtService;
 import com.wedding.service.service.DataService;
 import com.wedding.service.service.GuestLoginThrottle;
+import com.wedding.service.service.PlannerPasskeyService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import java.time.OffsetDateTime;
@@ -13,9 +14,9 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController @RequestMapping("/api/v1")
 public class AuthController {
-  private final DataService db; private final JwtService jwt; private final AppProperties props; private final GuestLoginThrottle throttle;
-  AuthController(DataService db, JwtService jwt, AppProperties props, GuestLoginThrottle throttle) {this.db=db;this.jwt=jwt;this.props=props;this.throttle=throttle;}
-  public record Login(@NotBlank String email,@NotBlank String password) {} public record GuestSession(@NotBlank String name,@NotBlank String answer) {}
+  private final DataService db; private final JwtService jwt; private final AppProperties props; private final GuestLoginThrottle throttle; private final PlannerPasskeyService passkeys;
+  AuthController(DataService db, JwtService jwt, AppProperties props, GuestLoginThrottle throttle, PlannerPasskeyService passkeys) {this.db=db;this.jwt=jwt;this.props=props;this.throttle=throttle;this.passkeys=passkeys;}
+  public record Login(@NotBlank String email,@NotBlank String password,String origin) {} public record GuestSession(@NotBlank String name,@NotBlank String answer) {}
   public record InviteLookup(@NotBlank String name) {}
 
   /** Guests identify themselves by their own name rather than an invitation code: the name maps to
@@ -35,7 +36,14 @@ public class AuthController {
     if (rows.stream().map(r->r.get("guest_id")).distinct().count()>1) throw new ApiException(HttpStatus.CONFLICT,"AMBIGUOUS_NAME","More than one guest matches that name. Please enter your full first and last name.");
     return rows.getFirst();
   }
-  @PostMapping("/auth/planner/login") Map<String,Object> login(@Valid @RequestBody Login in) { var u=db.one("SELECT id,email,password_hash,role FROM planner_user WHERE email=:e AND active=true",Map.of("e",in.email().toLowerCase())); if(!db.passwords.matches(in.password(),u.get("password_hash").toString())) throw new ApiException(HttpStatus.UNAUTHORIZED,"INVALID_CREDENTIALS","Invalid email or password"); return Map.of("accessToken",jwt.create(db.id(u.get("id")),u.get("role").toString(),null,props.security().plannerSessionMinutes()),"tokenType","Bearer","role",u.get("role")); }
+  @PostMapping("/auth/planner/login") Map<String,Object> login(@Valid @RequestBody Login in) {
+    var rows=db.many("SELECT id,email,password_hash,role FROM planner_user WHERE lower(email)=:e AND active=true",Map.of("e",in.email().trim().toLowerCase(Locale.ROOT)));
+    if(rows.isEmpty() || !db.passwords.matches(in.password(),rows.getFirst().get("password_hash").toString()))
+      throw new ApiException(HttpStatus.UNAUTHORIZED,"INVALID_CREDENTIALS","Invalid email or password");
+    var user=rows.getFirst(); UUID id=db.id(user.get("id"));
+    return Map.of("accessToken",jwt.create(id,user.get("role").toString(),null,props.security().plannerSessionMinutes()),"tokenType","Bearer","role",user.get("role"),
+      "hasPasskey",passkeys.hasPasskey(id,in.origin()),"enrollmentToken",passkeys.enrollment(id));
+  }
   @PostMapping("/guest/sessions") Map<String,Object> guest(@Valid @RequestBody GuestSession in) { var p=resolveParty(in.name()); UUID partyId=db.id(p.get("id")); throttle.checkAllowed(partyId); if(!db.passwords.matches(in.answer().trim().toLowerCase(Locale.ROOT),p.get("verification_answer_hash").toString())) throttle.recordFailureAndThrow(partyId); throttle.recordSuccess(partyId); db.named.update("UPDATE invitation SET status=CASE WHEN status='DRAFT' THEN 'VIEWED' ELSE status END,viewed_at=COALESCE(viewed_at,now()) WHERE id=:id",Map.of("id",p.get("invitation_id"))); return Map.of("accessToken",jwt.create(db.id(p.get("id")),"GUEST",db.id(p.get("id")),db.id(p.get("guest_id")),props.security().guestSessionMinutes()),"tokenType","Bearer"); }
   @PostMapping("/guest/invitations/lookup") Map<String,Object> lookup(@Valid @RequestBody InviteLookup in) { var p=resolveParty(in.name()); throttle.assertNotLocked(db.id(p.get("id"))); return Map.of("partyName",p.get("display_name"),"verificationQuestion",p.get("verification_question")); }
 }

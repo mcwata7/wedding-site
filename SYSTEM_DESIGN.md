@@ -175,6 +175,10 @@ Use JSON over HTTPS and version all endpoints under `/api/v1`.
 Examples:
 
 ```text
+POST   /api/v1/auth/planner/passkeys/login/options
+POST   /api/v1/auth/planner/passkeys/login/finish
+POST   /api/v1/internal/passkeys/register/options
+POST   /api/v1/internal/passkeys/register/finish
 POST   /api/v1/internal/guests/import
 GET    /api/v1/internal/venues/{venueId}
 POST   /api/v1/internal/venues/rooms
@@ -209,7 +213,7 @@ API standards:
 
 ## 8. Authentication and Security
 
-- Planners authenticate through email/password. The planner web app keeps the JWT in memory only; a page refresh forces re-login. This is an explicit tradeoff for simplicity in a low-volume, five-user tool.
+- Planner sign-in starts with email. Accounts with a passkey on the current planner hostname are offered passkey authentication first, with an explicit password fallback. Password sign-in prompts accounts without a passkey to set one up; “Not now” continues and the prompt returns on the next login. Passkeys require device user verification. The planner web app keeps the JWT in memory only; a refresh forces re-login.
 - (Future hardening) MFA and identity-provider integration can be added without changing the guest authentication model.
 - Guests authenticate by name plus their party's verification answer; passwords are not required. The name identifies the party and is not treated as secret — the bcrypt-hashed verification answer is the only access factor, so it should be something only the invited party knows.
 - Because that answer is a single low-entropy secret, guest login is throttled per party: 5 answers per minute, a 5-minute lock after 10 consecutive wrong answers (re-arming every further 10), and a permanent lock after 30 that only an **admin** can clear (`POST /api/v1/internal/parties/{id}/unlock`). A correct answer resets all of it. Planners see the lock state on the party detail page; there is deliberately no self-service reset on the guest site, since the only thing a guest could prove is the answer they just failed.

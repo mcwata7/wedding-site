@@ -75,6 +75,7 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?required}
       PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:?required} # https://<guest-site>.web.app -- QR payload
       WEDDING_CORS_ALLOWED_ORIGINS: ${WEDDING_CORS_ALLOWED_ORIGINS:?required}
+      WEDDING_PASSKEY_ALLOWED_ORIGINS: ${WEDDING_PASSKEY_ALLOWED_ORIGINS:-https://rautanabe-planner.web.app,https://rautanabe-planner.firebaseapp.com}
       SLACK_WEB_HOOK: ${SLACK_WEB_HOOK:-}
       # No JDWP here -- see ../compose.yaml for the dev-only debug port. Flags tuned to fit a
       # 512MB cgroup limit: MaxRAMPercentage=70 of 512MB -> ~358MB heap; SerialGC because G1's

@@ -35,7 +35,8 @@ Every request passes through, in order: `RequestIdFilter` (`@Order(1)`, stamps a
 
 | Controller | Base path | Responsibility |
 | --- | --- | --- |
-| `AuthController` | `/api/v1/auth`, `/api/v1/guest/sessions` | Planner login (email/password); guest session (guest name + verification answer) |
+| `AuthController` | `/api/v1/auth`, `/api/v1/guest/sessions` | Planner password login and short-lived enrollment proof; guest session (guest name + verification answer) |
+| `PlannerPasskeyController` | `/api/v1/auth/planner/passkeys/login/{options,finish}`, `/api/v1/internal/passkeys/register/{options,finish}` | Passkey sign-in and authenticated registration through `PlannerPasskeyService` |
 | `GuestController` | `/api/v1/guest/**` | Self-service: view party/guests, update editable guest fields, view events, RSVP, view accommodation, file a change request |
 | `InternalController` | `/api/v1/internal/**` | Planner writes: create party/guest, issue QR invitation, record delivery, create event/venue/venue-room/venue-fee/accommodation-assignment/things-to-do-item records, manual RSVP override |
 | `InternalDataController` | `/api/v1/internal/**` | Planner reads (dashboard, list/detail endpoints, including nested `venue → {rooms, fees}`, the flat cross-venue `venue-rooms` list, and `party → guests` with each guest's room-assignment join) plus **generic** update/archive for simple lookup-style resources, plus site-settings read/update |
@@ -88,6 +89,18 @@ The site-settings patch allows both fields, validates three/six-digit hex
 (with an optional `#`), normalizes to lowercase with `#`, and maps null/blank
 to null. Existing audited settings updates and guest config reads carry the
 fields without a separate endpoint. Defaults remain a frontend concern.
+
+### Planner passkeys
+
+`PlannerPasskeyService` uses Yubico `webauthn-server-core` 2.7.0 for WebAuthn verification. `V28__planner_passkeys.sql` stores credential IDs, COSE public keys, counters, owner UUIDs, RP hostnames, and use timestamps in `planner_passkey`. Private keys remain with authenticators. The stable WebAuthn user handle is the planner UUID encoded as 16 bytes. Repository lookups scope keys to the RP hostname and active planner accounts.
+
+Registration requires an ADMIN/PLANNER JWT and a five-minute enrollment token issued only after a correct password login. This proof is bound to the same account. Registration requests require discoverable credentials and device user verification; assertions also require user verification. The verifier checks signed origin, RP ID, challenge, credential ownership, signatures, and counters before minting the normal planner JWT. An atomic counter update rejects concurrent stale nonzero counters; zero counters remain supported for authenticators without counters.
+
+`planner_passkey_challenge` persists enrollment proof and full ceremony options with a five-minute expiry, so requests survive API restarts and work across instances. Finish atomically deletes the matching challenge with `DELETE ... RETURNING` before verification; failed verification cannot reuse it. Registration consumes only challenges owned by the authenticated planner. Key insertion and its audit record share a transaction; audits contain the RP hostname, never credential response bodies. Expired challenges are removed when new ones are created.
+
+`WEDDING_PASSKEY_ALLOWED_ORIGINS` lists exact trusted **planner frontend** origins independently from API CORS settings. It defaults to `http://localhost:3000` for local use; numeric IPs do not work with browser passkeys. Production Compose defaults to `https://rautanabe-planner.web.app,https://rautanabe-planner.firebaseapp.com`. For a custom domain, update both passkey and CORS allowlists on the VM before enabling it. The RP ID is each trusted origin’s hostname; Firebase aliases cannot share an RP ID because they are separate domains, so switching aliases needs separate enrollment. Prefer one canonical planner URL.
+
+Password authentication stays available and issues `hasPasskey` for the submitted origin plus an `enrollmentToken`. Requests without `origin` remain compatible with API clients, returning `hasPasskey=false`. Unknown/inactive accounts cannot start passkey sign-in; failed passwords return the same credential error. The email-first UI necessarily exposes whether an account has a passkey on that hostname. Passkey administration/deletion and password changes are outside this change.
 
 ## 6. Data Access
 

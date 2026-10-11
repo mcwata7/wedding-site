@@ -75,6 +75,11 @@ MediaController.java | @RestController Base("/api/v1")
 MediaController.java | Get("/internal/media") List<Map<String,Object>> list()
 MediaController.java | Get("/media/{id}") ResponseEntity<byte[]> read(@PathVariable UUID id)
 MediaController.java | Post(value = "/internal/media", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+PlannerPasskeyController.java | @RestController Base("/api/v1")
+PlannerPasskeyController.java | Post("/auth/planner/passkeys/login/finish") Map<String,Object> loginFinish(@Valid @RequestBody Finish input)
+PlannerPasskeyController.java | Post("/auth/planner/passkeys/login/options") Map<String,Object> loginOptions(@Valid @RequestBody LoginStart input)
+PlannerPasskeyController.java | Post("/internal/passkeys/register/finish") Map<String,Object> registrationFinish(@AuthenticationPrincipal Principal actor,@Valid
+PlannerPasskeyController.java | Post("/internal/passkeys/register/options") Map<String,Object> registrationOptions(@AuthenticationPrincipal Principal actor,@Val
 ReportController.java | @RestController Base("/api/v1/internal/reports")
 ReportController.java | Get(value="/attendance.csv",produces="text/csv") ResponseEntity<String> attendance(@RequestParam(required=false) UUID eventId)
 ReportController.java | Get(value="/dietary.csv",produces="text/csv") ResponseEntity<String> dietary()
@@ -89,7 +94,7 @@ SiteController.java | Get("/travel") Map<String,Object> travel()
 
 ## Database schema (Flyway migrations)
 
-Latest migration: `V27__label_colors.sql`
+Latest migration: `V28__planner_passkeys.sql`
 
 | Migration | Tables touched |
 |---|---|
@@ -119,6 +124,7 @@ Latest migration: `V27__label_colors.sql`
 | V25__party_mailing_address.sql | party |
 | V26__remove_party_email_and_phone.sql | party |
 | V27__label_colors.sql | site_settings |
+| V28__planner_passkeys.sql | planner_passkey,planner_passkey_challenge |
 
 ## Frontend apps
 
@@ -160,10 +166,12 @@ Latest migration: `V27__label_colors.sql`
 - backend/src/main/java/com/wedding/service/api/InternalDataController.java
 - backend/src/main/java/com/wedding/service/api/InvitationCardController.java
 - backend/src/main/java/com/wedding/service/api/MediaController.java
+- backend/src/main/java/com/wedding/service/api/PlannerPasskeyController.java
 - backend/src/main/java/com/wedding/service/api/ReportController.java
 - backend/src/main/java/com/wedding/service/api/RequestIdFilter.java
 - backend/src/main/java/com/wedding/service/api/SiteController.java
 - backend/src/main/java/com/wedding/service/config/AppProperties.java
+- backend/src/main/java/com/wedding/service/config/PasskeyProperties.java
 - backend/src/main/java/com/wedding/service/config/WebConfig.java
 - backend/src/main/java/com/wedding/service/security/JwtFilter.java
 - backend/src/main/java/com/wedding/service/security/JwtService.java
@@ -175,6 +183,7 @@ Latest migration: `V27__label_colors.sql`
 - backend/src/main/java/com/wedding/service/service/InvitationCardRenderer.java
 - backend/src/main/java/com/wedding/service/service/MediaSeedService.java
 - backend/src/main/java/com/wedding/service/service/MediaService.java
+- backend/src/main/java/com/wedding/service/service/PlannerPasskeyService.java
 - backend/src/main/java/com/wedding/service/service/SlackNotifier.java
 
 ### frontend/internal/src
@@ -184,6 +193,7 @@ Latest migration: `V27__label_colors.sql`
 - frontend/internal/src/api/types.ts
 - frontend/internal/src/auth/AuthContext.tsx
 - frontend/internal/src/auth/LoginPage.tsx
+- frontend/internal/src/auth/passkeys.ts
 - frontend/internal/src/components/index.tsx
 - frontend/internal/src/index.css
 - frontend/internal/src/lib/colorContrast.ts
