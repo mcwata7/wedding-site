@@ -27,7 +27,7 @@ export function HomePage() {
     // conflict: `width: auto` solves against the negative margins and stretches to fill evenly on
     // both sides at any viewport width, the same pattern the hero image below already uses.
     return (
-      <div className="-mx-4 -mt-8 sm:mx-0 sm:mt-0 sm:rounded-lg overflow-hidden">
+      <div className="-mx-4 sm:mx-0 sm:rounded-lg overflow-hidden">
         <img
           src={siteMediaUrl(settings.home_design_image_id)}
           alt={page?.heading || `${settings.partner_one_name || 'The'} & ${settings.partner_two_name || 'Couple'}`}
@@ -41,7 +41,7 @@ export function HomePage() {
 
   return (
     <div>
-      <div className="relative -mx-4 -mt-8 sm:mx-0 sm:mt-0 sm:rounded-lg overflow-hidden mb-10">
+      <div className="relative -mx-4 sm:mx-0 sm:rounded-lg overflow-hidden mb-10">
         {hero ? (
           <img src={hero} alt="" className="w-full h-[60vh] min-h-[320px] object-cover" />
         ) : (

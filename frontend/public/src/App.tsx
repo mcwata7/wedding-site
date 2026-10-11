@@ -66,6 +66,7 @@ function NavItem({ page, layout, activeSection, theme }: { page: SitePage; layou
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation()
   const { data, isLoading } = useSiteConfig()
   const layout = useSiteLayout()
   // Only ever mounted inside GuestRoute, so this is the one place site-wide theming (including
@@ -85,7 +86,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       >
         <nav
           ref={navRef}
-          className="nav-scroll max-w-3xl mx-auto px-4 py-3 flex items-center gap-1 overflow-x-auto"
+          className="nav-scroll max-w-3xl mx-auto px-4 py-6 sm:py-8 flex items-center gap-1 overflow-x-auto"
           style={{ fontFamily: theme.style.fontFamily }}
           data-fade-left={fadeLeft}
           data-fade-right={fadeRight}
@@ -103,7 +104,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </nav>
       </header>
       <main className="flex-1">
-        <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">{isLoading ? <LoadingSpinner /> : children}</div>
+        <div className={`max-w-3xl mx-auto px-4 ${pathname === '/' ? 'pb-8 sm:pb-12' : 'py-8 sm:py-12'}`}>{isLoading ? <LoadingSpinner /> : children}</div>
       </main>
       <ScrollToTopButton />
     </div>

@@ -50,8 +50,8 @@ export function OnePage() {
         const Component = SECTION_COMPONENTS[page.slug]
         return (
           <Fragment key={page.slug}>
-            {/* No margin on Section itself -- the first section (typically Home) relies on
-             * sitting flush at the top for its hero's negative margins to line up. */}
+            {/* No margin on Section itself -- the first section sits directly below
+             * the header, which owns the spacing around the navigation. */}
             {i > 0 && (
               <div className="my-16">
                 <div className="temple-divider text-xs" />

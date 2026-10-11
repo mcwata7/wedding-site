@@ -84,8 +84,8 @@ export function PageHeading({ title }: { title: string }) {
 /** Wraps one page's content as an anchored section for single-page mode: gives it the nav's
  * scroll target (`id`) and drops the heading level inside to h2. Vertical spacing between
  * sections is left to the caller (a `space-y-*` on the list) rather than margins here, so the
- * first section -- typically Home, whose hero relies on negative margins to break out of the
- * page padding -- isn't pushed down. */
+ * first section -- typically Home, whose mobile hero uses negative horizontal margins --
+ * isn't pushed down. */
 export function Section({ id, children }: { id: string; children: ReactNode }) {
   return (
     <section id={id}>
