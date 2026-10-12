@@ -5,6 +5,8 @@ import com.wedding.service.service.DataService;
 import com.wedding.service.service.InvitationCardRenderer;
 import com.wedding.service.service.InvitationCardRenderer.Orientation;
 import java.util.*;
+import java.time.*;
+import java.time.format.DateTimeParseException;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -216,7 +218,13 @@ public class InternalDataController {
       }
     }
     if(updates.isEmpty() && answer==null) throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","No editable fields were provided");
-    Map<String,Object> before=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); var params=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("id",id); List<String> setters=new ArrayList<>(); for(var e:updates){setters.add(e.getKey()+"=:"+e.getKey());params.addValue(e.getKey(),db.checkEnum(e.getKey(),db.coerceUuidLike(e.getKey(),e.getValue())));}
+    Map<String,Object> before=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); var params=new org.springframework.jdbc.core.namedparam.MapSqlParameterSource("id",id); List<String> setters=new ArrayList<>(); for(var e:updates){
+      String column=e.getKey();
+      setters.add(column+"=:"+column);
+      if ("event".equals(table) && Set.of("starts_at","ends_at").contains(column)) {
+        params.addValue(column,eventTimestamp(column,e.getValue()),java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+      } else params.addValue(column,db.checkEnum(column,db.coerceUuidLike(column,e.getValue())));
+    }
     if(answer!=null) { setters.add("verification_answer_hash=:answerHash"); params.addValue("answerHash",db.passwords.encode(answer)); }
     if(Set.of("venue","event","site_page","thing_to_do_item","venue_room","venue_fee","faq_item","travel_hotel","travel_flight").contains(table)) setters.add("updated_at=now()");
     db.named.update("UPDATE "+table+" SET "+String.join(",",setters)+" WHERE id=:id",params); Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); if("party".equals(table)) {
@@ -226,6 +234,19 @@ public class InternalDataController {
       db.audit(actor.id(),"UPDATE",table.toUpperCase(),id,before,auditAfter);
     } else db.audit(actor.id(),"UPDATE",table.toUpperCase(),id,before,after);
     return after;
+  }
+  /** datetime-local form values have no offset; use UTC, matching event creation's
+   * database session timezone. Offset-bearing API values preserve their instant. */
+  static OffsetDateTime eventTimestamp(String column,Object value) {
+    if (value==null && "ends_at".equals(column)) return null;
+    if (value instanceof String text && !text.isBlank()) {
+      try { return OffsetDateTime.parse(text.trim()); }
+      catch (DateTimeParseException ignored) {
+        try { return LocalDateTime.parse(text.trim()).atOffset(ZoneOffset.UTC); }
+        catch (DateTimeParseException invalid) { /* Report a client validation error below. */ }
+      }
+    }
+    throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR",column+" must be a valid ISO date and time");
   }
   @PostMapping("/resources/{resource}/{id}/archive") Map<String,Object> archive(@AuthenticationPrincipal Principal actor,@PathVariable String resource,@PathVariable UUID id) {
     String table=table(resource); Map<String,Object> before=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); String field="guest".equals(table)?"active":"archived"; String value="guest".equals(table)?"false":"true";
