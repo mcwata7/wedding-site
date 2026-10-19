@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-18 — Bulk planner actions reuse audited party writes
+**Context:** Planners need to issue QR codes and set one verification question/answer for several selected parties from Parties & Guests.
+**Decision:** Select displayed parties and confirm the named targets in a modal. Reuse the existing per-party invitation POST and resource PATCH sequentially, preserving authorization, hashing, validation, and per-party audits. Show partial completion explicitly, retain only failed parties for retry, refresh party/invitation-card queries, and clear selection when search changes. Stop further writes when the session expires. QR confirmation explains rotation and reprinting; verification answers stay masked and clear after completion or cancellation.
+**Rejected:** A parallel fire-and-forget loop or a generic success toast would hide partial failures and could rotate already-issued QR codes again on retry. A new bulk API is unnecessary for these independent per-party edits; the UI does not promise an all-or-nothing batch transaction.
+
 ## 2026-10-11 — Guest name edits through the contact form
 **Context:** Guests need to correct their first/last name from Contact info.
 **Decision:** Reuse the guest-scoped contact PATCH and shared form, preserving blank names and contact-completion rules. Keep the guest UUID unchanged, collapse name whitespace to match sign-in normalization, and tell guests to use their saved name on future logins. Invalidate party data so RSVP names reflect edits.

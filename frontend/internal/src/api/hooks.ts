@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from './client'
+import { api, ApiRequestError } from './client'
 import type {
   Dashboard, Party, PartyDetail, Guest, Event, Venue, VenueRoom, VenueRoomWithVenue, VenueFee,
   AccommodationAssignment,
@@ -70,6 +70,52 @@ export function useIssueQr() {
   return useMutation({
     mutationFn: (partyId: string) => api.post<{ qrToken: string; expiresAt: string }>(`${BASE}/parties/${partyId}/invitations`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parties'] }),
+  })
+}
+
+type BulkPartyAction = { partyIds: string[] } & (
+  | { kind: 'issueQr' }
+  | { kind: 'verification'; question: string; answer: string }
+)
+
+export interface BulkPartyResult {
+  succeeded: string[]
+  failed: { id: string; message: string }[]
+}
+
+/** Keep each existing audited write independent and report partial completion explicitly. */
+export function useBulkPartyAction() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (action: BulkPartyAction): Promise<BulkPartyResult> => {
+      const result: BulkPartyResult = { succeeded: [], failed: [] }
+      let sessionExpired = false
+      for (const id of action.partyIds) {
+        if (sessionExpired) {
+          result.failed.push({ id, message: 'Not attempted: please log in again.' })
+          continue
+        }
+        try {
+          if (action.kind === 'issueQr') {
+            await api.post(`${BASE}/parties/${id}/invitations`)
+          } else {
+            await api.patch(`${BASE}/resources/parties/${id}`, {
+              verification_question: action.question,
+              verification_answer: action.answer,
+            })
+          }
+          result.succeeded.push(id)
+        } catch (err) {
+          result.failed.push({ id, message: err instanceof ApiRequestError ? err.message : 'Request failed. Check this party before retrying.' })
+          sessionExpired = err instanceof ApiRequestError && err.status === 401
+        }
+      }
+      return result
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['parties'] })
+      qc.invalidateQueries({ queryKey: ['invitation-cards'] })
+    },
   })
 }
 

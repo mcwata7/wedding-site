@@ -129,7 +129,7 @@ export function Select({ value, onChange, options, placeholder, error, className
 // --- Table ---
 interface Column<T> {
   key: string
-  header: string
+  header: ReactNode
   render?: (row: T) => ReactNode
 }
 interface TableProps<T extends { id: string }> {
