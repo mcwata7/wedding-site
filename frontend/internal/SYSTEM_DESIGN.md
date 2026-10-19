@@ -198,3 +198,5 @@ All server state lives in TanStack Query (`src/api/hooks.ts`); there is no separ
 - **Properties and Rooms tabs were removed from the Accommodations page.** A venue is now the lodging property too (backend design §12), so `VenueDetailPage`'s Rooms table is the one place room inventory gets entered; the Accommodations page kept only Assignments and Change Requests, which stay cross-venue (the dashboard links here for the open-change-request count, and a rooming list needs to span every venue, not one at a time).
 
 Edit Party includes an optional password field, New Verification Answer. It opens blank and clears after a successful save; its hint explains that leaving it blank keeps the existing answer. The existing answer is never loaded into the form.
+
+Guest edits submit the full form, including optional email. The backend stores blank email as NULL, allowing multiple guests without email; duplicate real email addresses return a readable conflict message while the edit form stays open.

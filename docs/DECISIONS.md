@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-10-18 — Normalize missing planner guest emails before writes
+**Context:** The planner edit form sends email even when only name or phone changes. Empty strings participate in the active-guest unique email index, so editing a second guest without email returned HTTP 500.
+**Decision:** Normalize blank/whitespace email to SQL NULL and trim nonblank addresses for planner guest creation and updates. Preserve the existing case-insensitive uniqueness rule for real addresses, returning HTTP 409 EMAIL_ALREADY_IN_USE on conflicts. Keep omitted PATCH email unchanged and allow explicit blank/null to clear it.
+**Rejected:** Removing the uniqueness index or dropping blank fields from the form would respectively permit duplicate real addresses or prevent planners from clearing an existing email.
+
 ## 2026-10-18 — Bulk planner actions reuse audited party writes
 **Context:** Planners need to issue QR codes and set one verification question/answer for several selected parties from Parties & Guests.
 **Decision:** Select displayed parties and confirm the named targets in a modal. Reuse the existing per-party invitation POST and resource PATCH sequentially, preserving authorization, hashing, validation, and per-party audits. Show partial completion explicitly, retain only failed parties for retry, refresh party/invitation-card queries, and clear selection when search changes. Stop further writes when the session expires. QR confirmation explains rotation and reprinting; verification answers stay masked and clear after completion or cancellation.

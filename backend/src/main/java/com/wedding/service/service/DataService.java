@@ -43,6 +43,13 @@ public class DataService {
   }
   public void audit(UUID actor,String action,String type,UUID id,Object before,Object after) { try { named.update("INSERT INTO audit_record(actor_id,action,entity_type,entity_id,before_value,after_value) VALUES(:a,:ac,:t,:id,cast(:b as jsonb),cast(:af as jsonb))", Map.of("a",actor,"ac",action,"t",type,"id",id,"b",json.writeValueAsString(before==null?Map.of():before),"af",json.writeValueAsString(after==null?Map.of():after))); } catch(Exception e) { throw new IllegalStateException(e); } }
   public UUID id(Object value) { return UUID.fromString(value.toString()); }
+  /** Missing email addresses must be NULL so the active-guest unique index ignores them. */
+  public static String normalizeGuestEmail(Object value) {
+    if (value == null) return null;
+    if (!(value instanceof String email))
+      throw new ApiException(HttpStatus.BAD_REQUEST,"VALIDATION_ERROR","Email must be text");
+    return email.isBlank() ? null : email.trim();
+  }
   /** Request bodies bind "*_id" fields as JSON strings; the JDBC driver sends an unconverted
    * String as varchar, which Postgres refuses to assign into a uuid column without a cast.
    * Parsing to a real UUID here binds it as the native type instead, same as path-variable UUIDs. */

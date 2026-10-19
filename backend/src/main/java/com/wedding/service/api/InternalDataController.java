@@ -223,11 +223,20 @@ public class InternalDataController {
       setters.add(column+"=:"+column);
       if ("event".equals(table) && Set.of("starts_at","ends_at").contains(column)) {
         params.addValue(column,eventTimestamp(column,e.getValue()),java.sql.Types.TIMESTAMP_WITH_TIMEZONE);
+      } else if ("guest".equals(table) && "email".equals(column)) {
+        params.addValue(column,DataService.normalizeGuestEmail(e.getValue()));
       } else params.addValue(column,db.checkEnum(column,db.coerceUuidLike(column,e.getValue())));
     }
     if(answer!=null) { setters.add("verification_answer_hash=:answerHash"); params.addValue("answerHash",db.passwords.encode(answer)); }
     if(Set.of("venue","event","site_page","thing_to_do_item","venue_room","venue_fee","faq_item","travel_hotel","travel_flight").contains(table)) setters.add("updated_at=now()");
-    db.named.update("UPDATE "+table+" SET "+String.join(",",setters)+" WHERE id=:id",params); Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); if("party".equals(table)) {
+    try {
+      db.named.update("UPDATE "+table+" SET "+String.join(",",setters)+" WHERE id=:id",params);
+    } catch (org.springframework.dao.DuplicateKeyException e) {
+      if ("guest".equals(table) && input.containsKey("email"))
+        throw new ApiException(HttpStatus.CONFLICT,"EMAIL_ALREADY_IN_USE","This email is already in use by another guest. Use a different email or leave it blank.");
+      throw e;
+    }
+    Map<String,Object> after=db.one("SELECT * FROM "+table+" WHERE id=:id",Map.of("id",id)); if("party".equals(table)) {
       before=withoutPartyAnswer(before); after=withoutPartyAnswer(after);
       var auditAfter=new LinkedHashMap<>(after);
       auditAfter.put("verification_answer_changed",answer!=null);
