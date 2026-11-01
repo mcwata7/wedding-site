@@ -62,6 +62,8 @@ function setOrRemove(style: CSSStyleDeclaration, name: string, value: string | u
 export interface HeaderTheme {
   style: React.CSSProperties
   sizeClass: string
+  /** Opaque configured background, for controls that invert the header palette. */
+  backgroundColor?: string
   /** Present only when header_font_color is set -- callers should keep today's fixed
    * text-accent/text-ink classes when this is undefined, so an unthemed site is byte-identical
    * to before this feature existed. */
@@ -111,6 +113,7 @@ export function useSiteTheme(): HeaderTheme {
       fontFamily: headerFamily,
     },
     sizeClass: isFontSize(settings?.header_font_size) ? HEADER_FONT_SIZE_CLASS[settings.header_font_size] : 'text-sm',
+    backgroundColor: settings?.header_bg_color || undefined,
     color: settings?.header_font_color || undefined,
     inactiveColor: headerColorRgb ? `rgb(${headerColorRgb} / 0.6)` : undefined,
   }

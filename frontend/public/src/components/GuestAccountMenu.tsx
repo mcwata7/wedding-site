@@ -38,8 +38,8 @@ export function GuestAccountMenu({ theme, onLogout }: { theme: HeaderTheme; onLo
         aria-haspopup="menu" aria-expanded={open} aria-controls={open ? 'guest-account-menu' : undefined}
         onClick={() => setOpen(value => !value)}
         onKeyDown={e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); focusLast.current = e.key === 'ArrowUp'; setOpen(true) } }}
-        className="h-11 w-11 rounded-full border border-current flex items-center justify-center text-sm font-semibold text-ink hover:bg-accent/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
-        style={{ color: theme.color }}>
+        className="h-11 w-11 rounded-full flex items-center justify-center text-sm font-semibold bg-ink text-paper transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ink"
+        style={{ backgroundColor: theme.color, color: theme.backgroundColor, outlineColor: theme.color }}>
         <span aria-hidden="true">{initials}</span>
       </button>
       {open && (

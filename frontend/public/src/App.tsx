@@ -77,9 +77,8 @@ function Layout({ children }: { children: React.ReactNode }) {
   }
   const { data, isLoading } = useSiteConfig()
   const layout = useSiteLayout()
-  // Only ever mounted inside GuestRoute, so this is the one place site-wide theming (including
-  // the document-root mutations for color/font-size) takes effect -- /unlock
-  // never mounts Layout, so they stay on the fixed branded look with no extra scoping logic.
+  // Authenticated views own the site theme: the welcome card applies it before
+  // this layout mounts. /unlock stays on its fixed branded look.
   const theme = useSiteTheme()
   const pages = data?.pages ?? []
   const sectionSlugs = useSectionPages().map(p => p.slug)

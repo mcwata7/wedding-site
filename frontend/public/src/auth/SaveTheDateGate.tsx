@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { siteMediaUrl, useSiteConfig } from '../api/hooks'
 import { useGuestAuth } from './GuestAuthContext'
 import { LoadingSpinner } from '../components'
+import { useSiteTheme } from '../lib/theme'
 
 /** Keep the requested route/hash intact while showing the card before other prompts. */
 export function SaveTheDateGate({ children }: { children: React.ReactNode }) {
@@ -17,6 +18,8 @@ export function SaveTheDateGate({ children }: { children: React.ReactNode }) {
 }
 
 function SaveTheDateCard({ src, href, onContinue }: { src?: string; href: string; onContinue: () => void }) {
+  // This screen precedes Layout, so apply the site font here as well.
+  useSiteTheme()
   const heading = useRef<HTMLHeadingElement>(null)
   const [loaded, setLoaded] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -31,7 +34,7 @@ function SaveTheDateCard({ src, href, onContinue }: { src?: string; href: string
           {!loaded && <span role="status" className="sr-only">Loading your Save the Date card…</span>}
         </div>
       ) : <p role="status" className="text-center text-ink">The Save the Date card is unavailable. You can still continue to the site.</p>}
-      <a href={href} onClick={e => { e.preventDefault(); onContinue() }} className="text-accent underline underline-offset-4 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Continue to the site</a>
+      <a href={href} onClick={e => { e.preventDefault(); onContinue() }} className="font-display text-accent underline underline-offset-4 px-4 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4">Continue to the site</a>
     </main>
   )
 }
