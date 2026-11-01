@@ -1,8 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, API_BASE_URL } from './client'
-import type { SiteConfig, SitePage, ScheduleEvent, ThingToDoItem, FaqItem, TravelInfo, GuestParty, WeddingGuest } from './types'
+import type { SiteConfig, SitePage, ScheduleEvent, ThingToDoItem, FaqItem, TravelInfo, GuestParty, WeddingGuest, GuestContact } from './types'
 
 const BASE = '/api/v1/guest/site'
+
+export function useGuestContact() {
+  return useQuery({ queryKey: ['guest-contact'], queryFn: () => api.get<GuestContact>('/api/v1/guest/contact'), retry: false, refetchOnMount: false, refetchOnWindowFocus: false, refetchOnReconnect: false })
+}
 
 export function siteMediaUrl(id?: string | null): string | undefined {
   return id ? `${API_BASE_URL}/api/v1/media/${id}` : undefined

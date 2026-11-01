@@ -228,6 +228,7 @@ Latest migration: `V31__save_the_date.sql`
 - frontend/public/src/auth/GuestAuthContext.tsx
 - frontend/public/src/auth/SaveTheDateGate.tsx
 - frontend/public/src/auth/UnlockPage.tsx
+- frontend/public/src/components/GuestAccountMenu.tsx
 - frontend/public/src/components/index.tsx
 - frontend/public/src/index.css
 - frontend/public/src/lib/format.ts

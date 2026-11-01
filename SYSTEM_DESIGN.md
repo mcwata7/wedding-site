@@ -115,7 +115,7 @@ guests for sending invitations. Existing values prefill the form, and guests
 with all three values present skip it automatically. Save may be partial;
 blank inputs preserve existing values. “Skip for now” and successful saves
 dismiss the form for the current tab/session, including reloads. Missing details
-can be requested on a later login or a new tab. An authenticated “Contact info” header link opens the same
+can be requested on a later login or a new tab. The authenticated header’s initials menu offers Contact Info, which opens the same
 form at `/contact-info` for later edits in either layout. Guests can revise their own first/last name in this form; blank values preserve saved names, and future sign-ins use the updated name. Existing sessions retain the same guest identity. Planners can edit party mailing addresses in the internal tool.
 
 ### Schedule date color customization

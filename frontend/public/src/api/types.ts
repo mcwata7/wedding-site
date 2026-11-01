@@ -121,3 +121,11 @@ export interface GuestParty {
   party: { id: string; display_name: string; mailing_address?: string }
   guests: WeddingGuest[]
 }
+export interface GuestContact {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  mailingAddress?: string
+  complete: boolean
+}

@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { api, ApiRequestError } from '../api/client'
 import { useGuestAuth } from './GuestAuthContext'
+import type { GuestContact as Contact } from '../api/types'
 
-export interface Contact { firstName?: string; lastName?: string; email?: string; phone?: string; mailingAddress?: string; complete: boolean }
+export type { GuestContact as Contact } from '../api/types'
 
 /** Check once per authenticated session. Skipping is temporary, not profile completion. */
 export function ContactGate({ children }: { children: React.ReactNode }) {

@@ -13,6 +13,7 @@ import { ContentPage } from './pages/ContentPage'
 import { RsvpPage } from './pages/RsvpPage'
 import { OnePage } from './pages/OnePage'
 import { LoadingSpinner, ScrollToTopButton } from './components'
+import { GuestAccountMenu } from './components/GuestAccountMenu'
 import { useSiteConfig, useSiteLayout, useSectionPages, ROUTED_SLUGS } from './api/hooks'
 import { useActiveSection, useOverflowFade } from './lib/scroll'
 import { useSiteTheme, type HeaderTheme } from './lib/theme'
@@ -20,7 +21,7 @@ import type { SitePage } from './api/types'
 
 /** Custom header colors apply to both active and inactive links; the active tint
  * and weight still identify the current page. Hover/focus text styling is shared
- * by routed pages, section anchors, and Contact info. */
+ * by routed pages and section anchors. */
 const NAV_ITEM_CLASS = (active: boolean, sizeClass: string, hasCustomColor: boolean) =>
   `header-nav-item px-3 py-1.5 ${sizeClass} tracking-wide whitespace-nowrap rounded-md transition-colors ${
     active
@@ -77,7 +78,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   const pages = data?.pages ?? []
   const sectionSlugs = useSectionPages().map(p => p.slug)
   const activeSection = useActiveSection(layout === 'SINGLE_PAGE' ? sectionSlugs : [])
-  const { ref: navRef, fadeLeft, fadeRight } = useOverflowFade<HTMLElement>(pages.length + 1)
+  const { ref: navRef, fadeLeft, fadeRight } = useOverflowFade<HTMLElement>(pages.length)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -85,9 +86,11 @@ function Layout({ children }: { children: React.ReactNode }) {
         className="bg-paper/95"
         style={{ backgroundColor: theme.style.backgroundColor }}
       >
+        <div className="grid grid-cols-[2.75rem_minmax(0,1fr)_2.75rem] items-center gap-2 px-4 py-6 sm:py-8">
+        <div aria-hidden="true" />
         <nav
           ref={navRef}
-          className="nav-scroll max-w-3xl mx-auto px-4 py-6 sm:py-8 flex items-center gap-1 overflow-x-auto"
+          className="nav-scroll min-w-0 w-full max-w-3xl mx-auto flex items-center gap-1 overflow-x-auto"
           style={{ fontFamily: theme.style.fontFamily }}
           data-fade-left={fadeLeft}
           data-fade-right={fadeRight}
@@ -95,14 +98,9 @@ function Layout({ children }: { children: React.ReactNode }) {
           {pages.map(p => (
             <NavItem key={p.slug} page={p} layout={layout} activeSection={activeSection} theme={theme} />
           ))}
-          <NavLink
-            to="/contact-info"
-            className={({ isActive }) => NAV_ITEM_CLASS(isActive, theme.sizeClass, theme.color !== undefined)}
-            style={({ isActive }) => ({ color: isActive ? theme.color : theme.inactiveColor })}
-          >
-            <span className="header-nav-label">Contact info</span>
-          </NavLink>
         </nav>
+        <GuestAccountMenu theme={theme} />
+        </div>
       </header>
       <main className="flex-1">
         <div className={`max-w-3xl mx-auto px-4 ${pathname === '/' ? 'pb-8 sm:pb-12' : 'py-8 sm:py-12'}`}>{isLoading ? <LoadingSpinner /> : children}</div>
