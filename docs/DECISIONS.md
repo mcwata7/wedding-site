@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-11-01 — Firebase deploy service-usage inspection permission
+**Context:** Firebase CLI 15.34.2 passed Hosting permission checks but failed deployment with 403 `AUTH_PERMISSION_DENIED` for `serviceusage.services.get` on the Hosting API.
+**Decision:** Add an idempotent repair script granting `roles/serviceusage.serviceUsageViewer` to the account used by the Firebase JSON credential. Document it in the deployment provisioning instructions, keeping this identity separate from the WIF backend deployer. The live IAM change requires authenticated GCP access; repository edits alone cannot repair the existing account.
+**Rejected:** Changing frontend code, replacing a valid credential, granting Owner/Editor, or bypassing CLI API checks would not address the narrow missing read permission appropriately.
+
 ## 2026-11-01 — Optional post-login Save the Date card
 **Context:** Show a planner-provided design after guest authentication without replacing the home page.
 **Decision:** Add independent settings for image/enabled, default off; reuse media uploads and audited settings updates. Gate the protected route before contact collection and keep its URL intact. Save dismissal per token/tab, reset on login/logout, and retain a Continue link on media/config failures. Respect reduced-motion preferences.

@@ -149,6 +149,13 @@ echo
 echo "  gh secret set FIREBASE_SERVICE_ACCOUNT_JSON --repo ${GITHUB_REPO} < firebase-key.json"
 echo "  rm firebase-key.json"
 echo
+echo "Grant Service Usage Viewer to the Firebase key's service account (the CLI checks"
+echo "serviceusage.services.get before deploying). This is separate from the WIF deployer:"
+echo
+echo "  FIREBASE_PROJECT_ID=${FIREBASE_PROJECT_ID} bash scripts/fix-firebase-deploy-permissions.sh"
+echo
+echo "If the key uses a different client_email, set FIREBASE_SA_EMAIL to that account when running it."
+echo
 echo "If key creation is blocked by an org policy (iam.disableServiceAccountKeyCreation), mint"
 echo "the key from the Firebase console instead: Project settings -> Service accounts ->"
 echo "Generate new private key."
