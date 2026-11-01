@@ -147,6 +147,10 @@ to preserve unsaved input. Legacy sessions offer a fresh login before editing.
 
 `PageHeading` renders only the configured page title, with no decorative section label or icon above it, in both layouts. `date_label_color` controls schedule-card dates. `useSiteTheme` sets/cleans `--color-date-label`; Tailwind `dateLabel` supports opacity and falls back to the original `#7a2331`. Both layouts reuse the same components. Navigation, buttons, hotel links, and other accent uses retain their existing colors.
 
+### Post-login Save the Date
+
+`SaveTheDateGate` runs after authentication and before ContactGate (including direct contact-info links), in both layouts. When enabled with a selected image, it shows the entire uncropped card and a “Continue to the site” link, preserving the requested path, query, and hash. The card slides down and fades in once loaded; reduced-motion preferences disable animation. Dismissal is token-scoped in sessionStorage, survives refresh/navigation in the same tab, and resets at login/logout. Other tabs may show it independently. Disabled or missing-image configuration skips the screen; image/config errors leave Continue available. The gate does not affect invitation authorization or verification.
+
 ## 6. Application Architecture
 
 - **Header spacing:** navigation has equal top/bottom padding (24px on phones, 32px from the small breakpoint). The home route has no extra content padding above its hero or design image, so the links sit equally far from the page top and the image in both layouts. Other routes retain their content padding.

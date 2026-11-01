@@ -76,7 +76,7 @@ public class InternalDataController {
     "header_font_family","header_font_color","header_font_size","header_bg_color",
     "site_font_family","site_font_color","site_font_size","site_bg_color",
     "tile_bg_color","tile_border_color","date_label_color",
-    "home_design_image_id","home_design_only");
+    "home_design_image_id","home_design_only","save_the_date_image_id","save_the_date_enabled");
   private static final Set<String> DATE_COLUMNS = Set.of("wedding_start_date","wedding_end_date");
   @PatchMapping("/site/settings") Map<String,Object> updateSiteSettings(@AuthenticationPrincipal Principal actor,@RequestBody Map<String,Object> input) {
     var updates = input.entrySet().stream().filter(e -> SETTINGS_COLUMNS.contains(e.getKey())).toList();
@@ -117,7 +117,7 @@ public class InternalDataController {
           || "tile_bg_color".equals(col) || "tile_border_color".equals(col)) {
         setters.add(col + "=:" + col);
         val = blankToNull(val);
-      } else if ("home_design_only".equals(col)) {
+      } else if ("home_design_only".equals(col) || "save_the_date_enabled".equals(col)) {
         setters.add(col + "=:" + col);
         val = parseBooleanOrDefault(val, false);
       } else {

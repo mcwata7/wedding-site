@@ -93,7 +93,7 @@ SiteController.java | Get("/travel") Map<String,Object> travel()
 
 ## Database schema (Flyway migrations)
 
-Latest migration: `V30__remove_section_labels.sql`
+Latest migration: `V31__save_the_date.sql`
 
 | Migration | Tables touched |
 |---|---|
@@ -126,6 +126,7 @@ Latest migration: `V30__remove_section_labels.sql`
 | V28__planner_passkeys.sql | planner_passkey,planner_passkey_challenge |
 | V29__guest_wedding_rsvp.sql | event_eligibility,guest,rsvp |
 | V30__remove_section_labels.sql | site_settings |
+| V31__save_the_date.sql | site_settings |
 
 ## Frontend apps
 
@@ -225,6 +226,7 @@ Latest migration: `V30__remove_section_labels.sql`
 - frontend/public/src/api/types.ts
 - frontend/public/src/auth/ContactGate.tsx
 - frontend/public/src/auth/GuestAuthContext.tsx
+- frontend/public/src/auth/SaveTheDateGate.tsx
 - frontend/public/src/auth/UnlockPage.tsx
 - frontend/public/src/components/index.tsx
 - frontend/public/src/index.css

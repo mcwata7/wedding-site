@@ -101,6 +101,8 @@ export function SitePage() {
         tile_bg_color: settings.tile_bg_color ?? '',
         tile_border_color: settings.tile_border_color ?? '',
         date_label_color: settings.date_label_color ?? '',
+        save_the_date_image_id: settings.save_the_date_image_id ?? '',
+        save_the_date_enabled: String(settings.save_the_date_enabled ?? false),
       })
     }
   }, [settings])
@@ -113,6 +115,8 @@ export function SitePage() {
         ...form,
         wedding_start_date: form.wedding_start_date || null,
         wedding_end_date: form.wedding_end_date || null,
+        save_the_date_image_id: form.save_the_date_image_id || null,
+        save_the_date_enabled: form.save_the_date_enabled === 'true',
       })
       toast.success('General settings saved.')
     } catch (err) {
@@ -537,6 +541,19 @@ export function SitePage() {
       {tab === 'general' && (
         settingsLoading ? <LoadingSpinner /> : (
           <form onSubmit={saveSettings} className="space-y-6 bg-white rounded-lg border border-gray-200 p-6">
+            <section className="rounded-lg border border-gray-200 p-4 space-y-3" aria-labelledby="save-the-date-settings">
+              <h2 id="save-the-date-settings" className="text-base font-semibold text-gray-900">Save the Date</h2>
+              <p className="text-sm text-gray-600">Show your card after guest sign-in, before contact information. Guests can continue to the site when ready.</p>
+              <Field label="Save the Date image">
+                <MediaPicker value={form.save_the_date_image_id ?? ''} onChange={id => setForm(f => ({ ...f, save_the_date_image_id: id }))} filter={m => m.content_type.startsWith('image/')} />
+              </Field>
+              <label className="flex items-center gap-2 text-sm text-gray-700">
+                <input type="checkbox" checked={form.save_the_date_enabled === 'true'} onChange={e => setForm(f => ({ ...f, save_the_date_enabled: String(e.target.checked) }))} />
+                Show Save the Date after sign-in
+              </label>
+              {!form.save_the_date_image_id && <p className="text-xs text-gray-500">Choose an image to display the card. Without one, guests continue directly to the site.</p>}
+              <p className="text-xs text-gray-500">Shown once per sign-in in this browser tab. Use Save General below to apply changes.</p>
+            </section>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Partner One Name"><Input value={form.partner_one_name ?? ''} onChange={field('partner_one_name')} /></Field>
               <Field label="Partner Two Name"><Input value={form.partner_two_name ?? ''} onChange={field('partner_two_name')} /></Field>

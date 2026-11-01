@@ -30,6 +30,8 @@ export interface SiteSettings {
   tile_border_color?: string
   home_design_image_id?: string
   home_design_only?: boolean
+  save_the_date_image_id?: string
+  save_the_date_enabled?: boolean
 }
 
 export interface SitePage {

@@ -97,6 +97,7 @@ The planner UI covers every functional-requirement action in §5.1–5.6: login 
 
 ### 5.8 Guest Web Application
 
+- Planners can enable a post-login Save the Date card and choose its image in Wedding Site → General. Guests see the card before contact collection, with a slide-down entrance and a Continue link to their requested destination. It is shown once per login in each browser tab; disabled or unconfigured cards are skipped.
 - A guest reaches the site by entering their own name, which maps to their guest record and hence their party, then answers that party's verification question — the credential used by the guest API — to start a session. The session persists in the browser's `localStorage` (not memory-only, unlike the planner app) so a guest returning to the site over the months before the wedding isn't re-prompted every visit; it expires with the underlying 30-day guest token.
 - **Home:** hero image, both partners' names, a wedding date **range** (start and end date), a short tagline, and free-form heading/body copy — all planner-editable, none hardcoded.
 - **Schedule:** an optional planner-set banner image above the heading, then every event marked planner-visible on the public site (every party attends every event, so there's no per-party filter beyond that), each showing time, venue, dress code, and description in the wedding's configured display timezone. An event can be hidden from this tab (`public_visible = false`) without affecting wedding RSVPs.

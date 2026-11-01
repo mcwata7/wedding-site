@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-11-01 — Optional post-login Save the Date card
+**Context:** Show a planner-provided design after guest authentication without replacing the home page.
+**Decision:** Add independent settings for image/enabled, default off; reuse media uploads and audited settings updates. Gate the protected route before contact collection and keep its URL intact. Save dismissal per token/tab, reset on login/logout, and retain a Continue link on media/config failures. Respect reduced-motion preferences.
+**Rejected:** Reusing the Home design setting would couple the welcome screen to the site's permanent content. A new redirect route would complicate requested-path/hash restoration; a timed auto-dismiss would rush guests reading the card.
+
 ## 2026-10-18 — Normalize missing planner guest emails before writes
 **Context:** The planner edit form sends email even when only name or phone changes. Empty strings participate in the active-guest unique email index, so editing a second guest without email returned HTTP 500.
 **Decision:** Normalize blank/whitespace email to SQL NULL and trim nonblank addresses for planner guest creation and updates. Preserve the existing case-insensitive uniqueness rule for real addresses, returning HTTP 409 EMAIL_ALREADY_IN_USE on conflicts. Keep omitted PATCH email unchanged and allow explicit blank/null to clear it.

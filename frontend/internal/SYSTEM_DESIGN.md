@@ -41,6 +41,10 @@ There is a single user type: **Planner**. All planners share one role and see th
 
 Each item corresponds to a route in `src/App.tsx` and a page in `src/pages/`.
 
+### Save the Date controls
+
+Wedding Site → General includes a Save the Date image picker and “Show Save the Date after sign-in” checkbox. Upload or select the design with the existing media picker, then Save General. The card is independent of the Home design image. Defaults are disabled/no image; disabling retains the chosen image for later reuse, and no image makes guests bypass the screen. Existing image media, settings hooks, and audited planner writes are reused.
+
 ### 5.1 Login (`/login`)
 
 An email-first form calls `POST /api/v1/auth/planner/passkeys/login/options`. If the account has a passkey on this hostname, the next screen offers **Sign in with passkey** and **Use password instead**. Otherwise it shows the password form, which posts to `POST /api/v1/auth/planner/login`. Invalid login credentials display the API’s error without being relabeled as an expired session.

@@ -5,6 +5,8 @@ import { setToken, setUnauthorizedHandler } from '../api/client'
 const STORAGE_KEY = 'wedding_guest_token'
 
 interface GuestAuthCtx {
+  saveTheDateDismissed: boolean
+  dismissSaveTheDate: () => void
   contactDismissed: boolean
   dismissContact: () => void
   isAuthenticated: boolean
@@ -16,6 +18,16 @@ const GuestAuthContext = createContext<GuestAuthCtx | null>(null)
 
 export function GuestAuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
+  const [saveTheDateDismissed, setSaveTheDateDismissed] = useState(() => {
+    try {
+      const token = localStorage.getItem(STORAGE_KEY)
+      return !!token && sessionStorage.getItem('wedding_save_the_date_dismissed') === token
+    } catch { return false }
+  })
+  const dismissSaveTheDate = useCallback(() => {
+    try { sessionStorage.setItem('wedding_save_the_date_dismissed', localStorage.getItem(STORAGE_KEY) ?? '') } catch { /* Keep dismissal in memory if storage is unavailable. */ }
+    setSaveTheDateDismissed(true)
+  }, [])
   const [contactDismissed, setContactDismissed] = useState(() => sessionStorage.getItem('wedding_contact_dismissed') === localStorage.getItem(STORAGE_KEY) && !!localStorage.getItem(STORAGE_KEY))
   const dismissContact = useCallback(() => {
     sessionStorage.setItem('wedding_contact_dismissed', localStorage.getItem(STORAGE_KEY) ?? '')
@@ -37,6 +49,8 @@ export function GuestAuthProvider({ children }: { children: ReactNode }) {
   })
 
   const login = useCallback((token: string) => {
+    try { sessionStorage.removeItem('wedding_save_the_date_dismissed') } catch { /* In-memory state still resets. */ }
+    setSaveTheDateDismissed(false)
     queryClient.clear()
     sessionStorage.removeItem('wedding_contact_dismissed')
     setContactDismissed(false)
@@ -46,6 +60,8 @@ export function GuestAuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient])
 
   const logout = useCallback(() => {
+    try { sessionStorage.removeItem('wedding_save_the_date_dismissed') } catch { /* In-memory state still resets. */ }
+    setSaveTheDateDismissed(false)
     queryClient.clear()
     sessionStorage.removeItem('wedding_contact_dismissed')
     setContactDismissed(false)
@@ -58,7 +74,7 @@ export function GuestAuthProvider({ children }: { children: ReactNode }) {
     setUnauthorizedHandler(logout)
   }, [logout])
 
-  return <GuestAuthContext.Provider value={{ isAuthenticated, login, logout, contactDismissed, dismissContact }}>{children}</GuestAuthContext.Provider>
+  return <GuestAuthContext.Provider value={{ isAuthenticated, login, logout, contactDismissed, dismissContact, saveTheDateDismissed, dismissSaveTheDate }}>{children}</GuestAuthContext.Provider>
 }
 
 export function useGuestAuth(): GuestAuthCtx {
