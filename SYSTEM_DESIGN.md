@@ -118,6 +118,8 @@ dismiss the form for the current tab/session, including reloads. Missing details
 can be requested on a later login or a new tab. The authenticated header’s initials menu offers Contact Info, which opens the same
 form at `/contact-info` for later edits in either layout. Guests can revise their own first/last name in this form; blank values preserve saved names, and future sign-ins use the updated name. Existing sessions retain the same guest identity. Planners can edit party mailing addresses in the internal tool.
 
+The initials menu also offers Log Out. It removes the browser’s stored guest session, clears cached guest information and prompt state, and returns to sign-in. Other open tabs sign out when the shared login token is removed.
+
 ### Schedule date color customization
 
 Planners can set schedule-date text colors under Tile Styling, with a preview

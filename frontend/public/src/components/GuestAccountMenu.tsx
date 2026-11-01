@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useGuestContact } from '../api/hooks'
 import type { HeaderTheme } from '../lib/theme'
 
-export function GuestAccountMenu({ theme, onLogout }: { theme: HeaderTheme; onLogout?: () => void }) {
+export function GuestAccountMenu({ theme, onLogout }: { theme: HeaderTheme; onLogout: () => void }) {
   const { data } = useGuestContact()
   const [open, setOpen] = useState(false)
   const root = useRef<HTMLDivElement>(null)
@@ -52,7 +52,7 @@ export function GuestAccountMenu({ theme, onLogout }: { theme: HeaderTheme; onLo
             if (next !== undefined) { e.preventDefault(); choices[next]?.focus() }
           }}>
           <Link role="menuitem" tabIndex={-1} to="/contact-info" onClick={() => close()} className="block rounded-md px-4 py-3 text-sm hover:bg-accent/10 focus:bg-accent/10 focus:outline-none">Contact Info</Link>
-          <button role="menuitem" tabIndex={-1} type="button" disabled={!onLogout} onClick={() => { close(); onLogout?.() }} className="block w-full text-left rounded-md px-4 py-3 text-sm hover:bg-accent/10 focus:bg-accent/10 focus:outline-none disabled:opacity-50">Log Out</button>
+          <button role="menuitem" tabIndex={-1} type="button" onClick={() => { close(); onLogout() }} className="block w-full text-left rounded-md px-4 py-3 text-sm hover:bg-accent/10 focus:bg-accent/10 focus:outline-none">Log Out</button>
         </div>
       )}
     </div>

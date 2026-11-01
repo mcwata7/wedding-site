@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, Link, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, NavLink, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useGuestAuth } from './auth/GuestAuthContext'
 import { ContactGate } from './auth/ContactGate'
 import { SaveTheDateGate } from './auth/SaveTheDateGate'
@@ -69,6 +69,12 @@ function NavItem({ page, layout, activeSection, theme }: { page: SitePage; layou
 
 function Layout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation()
+  const { logout } = useGuestAuth()
+  const navigate = useNavigate()
+  const handleLogout = () => {
+    logout()
+    navigate('/unlock', { replace: true })
+  }
   const { data, isLoading } = useSiteConfig()
   const layout = useSiteLayout()
   // Only ever mounted inside GuestRoute, so this is the one place site-wide theming (including
@@ -99,7 +105,7 @@ function Layout({ children }: { children: React.ReactNode }) {
             <NavItem key={p.slug} page={p} layout={layout} activeSection={activeSection} theme={theme} />
           ))}
         </nav>
-        <GuestAccountMenu theme={theme} />
+        <GuestAccountMenu theme={theme} onLogout={handleLogout} />
         </div>
       </header>
       <main className="flex-1">

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api, API_BASE_URL } from './client'
+import { useGuestAuth } from '../auth/GuestAuthContext'
 import type { SiteConfig, SitePage, ScheduleEvent, ThingToDoItem, FaqItem, TravelInfo, GuestParty, WeddingGuest, GuestContact } from './types'
 
 const BASE = '/api/v1/guest/site'
@@ -13,7 +14,8 @@ export function siteMediaUrl(id?: string | null): string | undefined {
 }
 
 export function useSiteConfig() {
-  return useQuery({ queryKey: ['site-config'], queryFn: () => api.get<SiteConfig>(`${BASE}/config`) })
+  const { isAuthenticated } = useGuestAuth()
+  return useQuery({ queryKey: ['site-config'], queryFn: () => api.get<SiteConfig>(`${BASE}/config`), enabled: isAuthenticated })
 }
 
 /** Looks up a single site_page's heading/body/image by slug from the shared site config --

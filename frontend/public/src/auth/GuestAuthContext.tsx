@@ -60,18 +60,29 @@ export function GuestAuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient])
 
   const logout = useCallback(() => {
-    try { sessionStorage.removeItem('wedding_save_the_date_dismissed') } catch { /* In-memory state still resets. */ }
-    setSaveTheDateDismissed(false)
-    queryClient.clear()
-    sessionStorage.removeItem('wedding_contact_dismissed')
-    setContactDismissed(false)
-    localStorage.removeItem(STORAGE_KEY)
+    // Clear the API credential before cache observers can start another request.
     setToken(null)
     setIsAuthenticated(false)
+    setSaveTheDateDismissed(false)
+    setContactDismissed(false)
+    localStorage.removeItem(STORAGE_KEY)
+    try {
+      sessionStorage.removeItem('wedding_save_the_date_dismissed')
+      sessionStorage.removeItem('wedding_contact_dismissed')
+    } catch { /* Browser restrictions must not prevent clearing the login token. */ }
+    queryClient.clear()
   }, [queryClient])
 
   useEffect(() => {
     setUnauthorizedHandler(logout)
+  }, [logout])
+
+  useEffect(() => {
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === STORAGE_KEY || event.key === null) && !localStorage.getItem(STORAGE_KEY)) logout()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [logout])
 
   return <GuestAuthContext.Provider value={{ isAuthenticated, login, logout, contactDismissed, dismissContact, saveTheDateDismissed, dismissSaveTheDate }}>{children}</GuestAuthContext.Provider>

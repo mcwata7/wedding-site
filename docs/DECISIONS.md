@@ -17,6 +17,11 @@ Format:
 
 ---
 
+## 2026-11-01 — Guest account menu and explicit logout
+**Context:** Move contact editing into an initials menu and let guests end a persisted browser session.
+**Decision:** Reuse the guest-contact query for reactive initials and place the menu outside horizontal navigation overflow. Log Out reuses the auth handler, removes only owned session keys, clears API credentials/cache, and replaces the route with sign-in. Disable configuration queries while signed out and consume localStorage removal events in other tabs so they cannot retain an in-memory session.
+**Rejected:** Putting the dropdown inside the scrolling nav clips it on mobile. Clearing all localStorage would erase unrelated preferences. Adding a logout backend endpoint is unnecessary for the requested client-session removal; existing JWTs remain bounded by their server expiry.
+
 ## 2026-11-01 — Firebase deploy service-usage inspection permission
 **Context:** Firebase CLI 15.34.2 passed Hosting permission checks but failed deployment with 403 `AUTH_PERMISSION_DENIED` for `serviceusage.services.get` on the Hosting API.
 **Decision:** Add an idempotent repair script granting `roles/serviceusage.serviceUsageViewer` to the account used by the Firebase JSON credential. Document it in the deployment provisioning instructions, keeping this identity separate from the WIF backend deployer. The live IAM change requires authenticated GCP access; repository edits alone cannot repair the existing account.
